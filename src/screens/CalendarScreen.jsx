@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { events } from '../data/index'
 
 const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
@@ -69,24 +69,25 @@ export default function CalendarScreen() {
   const upcomingEvents = events.filter(e => e.status !== 'completed')
 
   return (
-    <div className="w-full min-h-screen bg-evo-black pb-28">
+    <div className="w-full bg-evo-bg pb-8">
       {/* Header */}
-      <div className="px-6 pt-14 pb-4">
-        <p className="text-xs tracking-[0.25em] uppercase text-evo-accent mb-1">EVO</p>
-        <h1 className="text-2xl font-light text-white">Availability</h1>
-        <p className="text-evo-muted text-sm mt-1 font-light">Block dates you're unavailable</p>
+      <div className="px-6 pt-14 pb-4 bg-white border-b border-evo-border">
+        <p className="text-xs font-bold tracking-[0.25em] uppercase text-evo-accent mb-1">EVO</p>
+        <h1 className="text-[22px] font-extrabold text-evo-text" style={{ letterSpacing: '-0.5px' }}>Availability</h1>
+        <p className="text-evo-muted text-sm mt-1">Block dates you're unavailable</p>
       </div>
 
       {/* Calendar */}
-      <div className="px-6 mb-6">
-        <div className="bg-evo-card rounded-2xl border border-evo-border p-5">
+      <div className="px-6 mt-5 mb-5">
+        <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-5"
+          style={{ boxShadow: 'rgba(45,27,105,0.08) 0px 2px 12px' }}>
           {/* Month nav */}
           <div className="flex items-center justify-between mb-5">
-            <button onClick={prevMonth} className="w-8 h-8 rounded-full border border-evo-border flex items-center justify-center">
+            <button onClick={prevMonth} className="w-8 h-8 rounded-full border-[1.5px] border-evo-border flex items-center justify-center hover:border-evo-dim transition-colors">
               <ChevronLeft size={14} className="text-evo-muted" />
             </button>
-            <p className="text-white font-light">{MONTHS[viewMonth]} {viewYear}</p>
-            <button onClick={nextMonth} className="w-8 h-8 rounded-full border border-evo-border flex items-center justify-center">
+            <p className="text-evo-text font-bold">{MONTHS[viewMonth]} {viewYear}</p>
+            <button onClick={nextMonth} className="w-8 h-8 rounded-full border-[1.5px] border-evo-border flex items-center justify-center hover:border-evo-dim transition-colors">
               <ChevronRight size={14} className="text-evo-muted" />
             </button>
           </div>
@@ -94,7 +95,7 @@ export default function CalendarScreen() {
           {/* Day headers */}
           <div className="grid grid-cols-7 mb-2">
             {DAYS.map(d => (
-              <p key={d} className="text-evo-dim text-xs text-center font-medium">{d}</p>
+              <p key={d} className="text-evo-muted text-xs text-center font-bold">{d}</p>
             ))}
           </div>
 
@@ -113,12 +114,12 @@ export default function CalendarScreen() {
                   key={day}
                   onClick={() => !isPast && toggleBlock(day)}
                   disabled={isPast}
-                  className={`aspect-square rounded-lg text-xs font-light flex items-center justify-center transition-all
-                    ${isBooked ? 'bg-evo-accent/20 text-evo-accent border border-evo-accent/30 cursor-default' :
-                      isBlocked ? 'bg-evo-elevated text-evo-muted border border-evo-border line-through' :
-                      isToday ? 'border border-white/40 text-white' :
-                      isPast ? 'text-evo-dim opacity-30' :
-                      'text-white hover:bg-evo-elevated'}
+                  className={`aspect-square rounded-lg text-xs font-medium flex items-center justify-center transition-all
+                    ${isBooked ? 'bg-evo-accent/20 text-evo-accent border-[1.5px] border-evo-dim cursor-default' :
+                      isBlocked ? 'bg-evo-elevated text-evo-muted border-[1.5px] border-evo-border line-through' :
+                      isToday ? 'border-[1.5px] border-evo-purple-mid text-evo-purple-mid font-bold' :
+                      isPast ? 'text-evo-muted opacity-30' :
+                      'text-evo-text hover:bg-evo-elevated'}
                   `}
                 >
                   {day}
@@ -130,16 +131,16 @@ export default function CalendarScreen() {
           {/* Legend */}
           <div className="flex items-center gap-4 mt-4 pt-4 border-t border-evo-border">
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm bg-evo-accent/20 border border-evo-accent/30" />
-              <p className="text-evo-dim text-xs">Booked</p>
+              <div className="w-3 h-3 rounded-sm bg-evo-accent/20 border-[1.5px] border-evo-dim" />
+              <p className="text-evo-muted text-xs">Booked</p>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm bg-evo-elevated border border-evo-border" />
-              <p className="text-evo-dim text-xs">Blocked</p>
+              <div className="w-3 h-3 rounded-sm bg-evo-elevated border-[1.5px] border-evo-border" />
+              <p className="text-evo-muted text-xs">Blocked</p>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm border border-white/40" />
-              <p className="text-evo-dim text-xs">Today</p>
+              <div className="w-3 h-3 rounded-sm border-[1.5px] border-evo-purple-mid" />
+              <p className="text-evo-muted text-xs">Today</p>
             </div>
           </div>
         </div>
@@ -147,28 +148,29 @@ export default function CalendarScreen() {
 
       {/* Upcoming booked events */}
       <div className="px-6">
-        <p className="text-xs tracking-[0.25em] uppercase text-evo-muted mb-4">Booked Dates</p>
+        <p className="text-xs font-bold tracking-[0.25em] uppercase text-evo-muted mb-4">Booked Dates</p>
         <div className="space-y-3">
           {upcomingEvents.map(event => (
             <motion.div
               key={event.id}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-evo-card rounded-2xl border border-evo-border p-4 flex items-center gap-4"
+              className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-4 flex items-center gap-4"
+              style={{ boxShadow: 'rgba(45,27,105,0.08) 0px 2px 12px' }}
             >
               <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0">
                 <img src={event.heroImage} alt="" className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-light truncate">{event.name}</p>
+                <p className="text-evo-text text-sm font-semibold truncate">{event.name}</p>
                 <p className="text-evo-muted text-xs mt-0.5">{event.date}</p>
               </div>
               <div className="text-right shrink-0">
                 <div className="flex items-center gap-1.5 justify-end">
                   <div className="w-1.5 h-1.5 rounded-full bg-evo-accent" />
-                  <p className="text-evo-accent text-xs">{event.daysAway}d away</p>
+                  <p className="text-evo-accent text-xs font-medium">{event.daysAway}d away</p>
                 </div>
-                <p className="text-evo-dim text-xs mt-0.5">{event.eventType}</p>
+                <p className="text-evo-muted text-xs mt-0.5">{event.eventType}</p>
               </div>
             </motion.div>
           ))}
@@ -176,10 +178,11 @@ export default function CalendarScreen() {
       </div>
 
       {/* EVO note */}
-      <div className="px-6 mt-6">
-        <div className="bg-evo-card rounded-2xl border-l-2 border-evo-accent p-4">
-          <p className="text-xs tracking-[0.2em] uppercase text-evo-accent mb-2">EVO Matching</p>
-          <p className="text-evo-muted text-xs leading-relaxed font-light">
+      <div className="px-6 mt-5">
+        <div className="bg-white rounded-[20px] border-l-[3px] border-evo-accent border-[1.5px] border-evo-border p-4"
+          style={{ boxShadow: 'rgba(45,27,105,0.08) 0px 2px 12px' }}>
+          <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-accent mb-2">EVO Matching</p>
+          <p className="text-evo-muted text-xs leading-relaxed">
             Keep your calendar updated. EVO only sends you leads for dates you're available — blocking dates ensures better match quality.
           </p>
         </div>

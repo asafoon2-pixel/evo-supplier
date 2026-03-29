@@ -3,17 +3,28 @@ export default {
   theme: {
     extend: {
       colors: {
-        'evo-black': '#0A0A0A',
-        'evo-surface': '#141414',
-        'evo-card': '#1A1A1A',
-        'evo-elevated': '#222222',
-        'evo-border': '#2A2A2A',
-        'evo-accent': '#C9A96E',
-        'evo-muted': '#888888',
-        'evo-dim': '#444444',
+        // Legacy names remapped to new light design system
+        'evo-black':    '#F5F5F7',
+        'evo-surface':  '#FFFFFF',
+        'evo-card':     '#FFFFFF',
+        'evo-elevated': '#EEF0FF',
+        'evo-border':   '#E8E8F0',
+        'evo-accent':   '#6C5CE7',
+        'evo-muted':    '#6B6B8A',
+        'evo-dim':      '#C5B8F0',
+        // New design system
+        'evo-text':         '#1A1A2E',
+        'evo-purple':       '#1E1060',
+        'evo-purple-mid':   '#2D1B8A',
+        'evo-purple-light': '#5B4BA8',
+        'evo-pink':         '#FF2D8A',
+        'evo-green':        '#00C48C',
+        'evo-red':          '#FF3B5C',
+        'evo-outer':        '#E0DFF5',
+        'evo-bg':           '#F5F5F7',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },
       letterSpacing: {
         widest: '0.2em',
