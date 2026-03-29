@@ -15,7 +15,7 @@ export function SupplierProvider({ children }) {
 //
   const [supplierName, setSupplierName] = useState('Maya')
 //
-  const TAB_SCREENS = ['home', 'leads', 'events', 'catalog', 'profile']
+  const TAB_SCREENS = ['home', 'calendar', 'events', 'catalog', 'profile']
   const navigate = (s) => { setScreen(s); if (TAB_SCREENS.includes(s)) setActiveTab(s) }
   const goTab    = (tab) => { setActiveTab(tab); setScreen(tab) }
 

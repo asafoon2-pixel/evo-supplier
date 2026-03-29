@@ -31,8 +31,8 @@ const screenMap = {
   insights:     Insights,
 }
 
-const tabScreens = ['home', 'leads', 'leadDetail', 'events', 'eventDetail',
-                    'catalog', 'profile', 'calendar', 'payments', 'insights']
+const tabScreens = ['home', 'calendar', 'events', 'leadDetail', 'eventDetail',
+                    'catalog', 'profile', 'payments', 'insights']
 
 function StatusBar() {
   return (
