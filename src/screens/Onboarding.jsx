@@ -3,11 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, ChevronRight, Check } from 'lucide-react'
 import { useSupplier } from '../context/SupplierContext'
 import { supplierCategories } from '../data/index'
-
+//dana
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "../firebase.js"; 
+//end
 const STEPS = ['category', 'info', 'pricing']
 
 export default function Onboarding() {
-  const { navigate } = useSupplier()
+  const {navigate, setSupplierName} = useSupplier()
   const [step, setStep]         = useState(0)
   const [category, setCategory] = useState('')
   const [name, setName]         = useState('')
@@ -22,9 +25,31 @@ export default function Onboarding() {
     return true
   }
 
-  const next = () => {
-    if (step < STEPS.length - 1) setStep(s => s + 1)
-    else navigate('home')
+const next = async () => {
+  if (step < STEPS.length - 1) {
+      setStep(s => s + 1)
+  } 
+    else {
+      try {
+        await addDoc(collection(db, "suppliers"), {
+          category: category,
+          businessName: name,
+          city: city,
+          phone: phone,
+          priceRange: { min: minPrice, max: maxPrice},
+          status: 'pending_review', // סטטוס ראשוני שהמצאנו
+          dateAdded: new Date()
+        });
+        
+        console.log("ספק אמיתי נשמר בהצלחה!");
+        setSupplierName(name);
+        navigate('home');
+        
+      } catch (error) {
+        console.error("שגיאה בשמירת הספק: ", error);
+        alert("קרתה שגיאה בשמירת הנתונים. נסי שוב.");
+      }
+    }
   }
 
   return (

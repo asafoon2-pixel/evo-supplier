@@ -4,8 +4,7 @@ import { useSupplier } from '../context/SupplierContext'
 import { supplierProfile, insights } from '../data/index'
 
 export default function Home() {
-  const { leads, events, goTab, setActiveLead, setActiveEvent, navigate } = useSupplier()
-
+  const { leads, events, goTab, setActiveLead, setActiveEvent, navigate, supplierName } = useSupplier()
   const newLeads    = leads.filter(l => l.status === 'new')
   const activeEvts  = events.filter(e => e.status !== 'completed')
   const urgentEvent = activeEvts.find(e => e.timeline?.some(t => t.urgent))
@@ -19,7 +18,7 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs tracking-[0.25em] uppercase text-evo-accent mb-1">EVO Partners</p>
-            <h1 className="text-xl font-light text-white">Good morning, Maya</h1>
+            <h1 className="text-xl font-light text-white">Good morning, {supplierName}</h1>
           </div>
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-evo-accent/30">
             <img src={supplierProfile.avatar} alt="" className="w-full h-full object-cover" />

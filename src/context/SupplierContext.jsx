@@ -12,7 +12,9 @@ export function SupplierProvider({ children }) {
   const [activeLead, setActiveLead]   = useState(null)
   const [activeEvent, setActiveEvent] = useState(null)
   const [editPackage, setEditPackage] = useState(null)
-
+//
+  const [supplierName, setSupplierName] = useState('Maya')
+//
   const TAB_SCREENS = ['home', 'leads', 'events', 'catalog', 'profile']
   const navigate = (s) => { setScreen(s); if (TAB_SCREENS.includes(s)) setActiveTab(s) }
   const goTab    = (tab) => { setActiveTab(tab); setScreen(tab) }
@@ -32,6 +34,9 @@ export function SupplierProvider({ children }) {
     activeEvent, setActiveEvent,
     editPackage, setEditPackage,
     newLeadCount,
+    //
+    supplierName, setSupplierName
+    //
   }
 
   return <SupplierContext.Provider value={value}>{children}</SupplierContext.Provider>
