@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Check, Zap, Plus, Minus, ChevronDown, Camera, X, Image } from 'lucide-react'
+import { ArrowLeft, Check, Zap, Plus, Minus, ChevronDown, Camera, X, Image as ImageIcon } from 'lucide-react'
 import { useSupplier } from '../context/SupplierContext'
 import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '../firebase.js'
@@ -9,66 +9,66 @@ import { auth, db } from '../firebase.js'
 const STEPS = ['category','identity','contact','story','package','products','pricing','documents','analysis','softlock','dashboard']
 
 const CATEGORIES = [
-  { icon: '🔊', name: 'Sound',         desc: 'PA systems, speakers, DJ gear' },
-  { icon: '💡', name: 'Lighting',      desc: 'Stage, ambient, LED setups' },
-  { icon: '🌸', name: 'Decor',         desc: 'Florals, styling, props' },
-  { icon: '🍹', name: 'Bar',           desc: 'Mobile bars, alcohol, staff' },
-  { icon: '📸', name: 'Photography',   desc: 'Photo & video coverage' },
-  { icon: '🎤', name: 'Entertainment', desc: 'DJ, live acts, performers' },
-  { icon: '🍽️', name: 'Catering',      desc: 'Food, waitstaff, equipment' },
-  { icon: '🚌', name: 'Transport',     desc: 'Guest shuttle, limo, vans' },
+  { icon: '🔊', name: 'Sound',         desc: 'מערכות הגברה, רמקולים, ציוד DJ' },
+  { icon: '💡', name: 'Lighting',      desc: 'תאורת במה, אווירה, ריגינג LED' },
+  { icon: '🌸', name: 'Decor',         desc: 'פרחים, סטיילינג, אביזרים' },
+  { icon: '🍹', name: 'Bar',           desc: 'ברים ניידים, אלכוהול, צוות' },
+  { icon: '📸', name: 'Photography',   desc: 'צילום וידאו ותמונות' },
+  { icon: '🎤', name: 'Entertainment', desc: 'DJ, להקות, אמנים' },
+  { icon: '🍽️', name: 'Catering',      desc: 'אוכל, צוות שירות, ציוד' },
+  { icon: '🚌', name: 'Transport',     desc: 'הסעות, לימוזינה, מיניבוסים' },
 ]
 
 const EXPERIENCE_OPTIONS = [
-  { value: 1,   label: 'Less than a year', icon: '🌱' },
-  { value: 2,   label: '1–3 years',        icon: '🌿' },
-  { value: 5,   label: '3–7 years',        icon: '🌳' },
-  { value: 10,  label: '7+ years',         icon: '🏆' },
+  { value: 1,   label: 'פחות משנה', icon: '🌱' },
+  { value: 2,   label: '1–3 שנים',  icon: '🌿' },
+  { value: 5,   label: '3–7 שנים',  icon: '🌳' },
+  { value: 10,  label: '7+ שנים',   icon: '🏆' },
 ]
 
 const TEAM_OPTIONS = [
-  { value: 1,  label: 'Just me',  icon: '🙋' },
-  { value: 3,  label: '2–5',      icon: '🤝' },
-  { value: 10, label: '5–15',     icon: '🏢' },
-  { value: 20, label: '15+',      icon: '🏭' },
+  { value: 1,  label: 'רק אני', icon: '🙋' },
+  { value: 3,  label: '2–5',    icon: '🤝' },
+  { value: 10, label: '5–15',   icon: '🏢' },
+  { value: 20, label: '15+',    icon: '🏭' },
 ]
 
 const CONTACT_OPTIONS = [
-  { value: 'whatsapp', label: 'WhatsApp', icon: '💬' },
-  { value: 'call',     label: 'Call',     icon: '📞' },
-  { value: 'email',    label: 'Email',    icon: '✉️' },
+  { value: 'whatsapp', label: 'וואצאפ', icon: '💬' },
+  { value: 'call',     label: 'שיחה',   icon: '📞' },
+  { value: 'email',    label: 'מייל',   icon: '✉️' },
 ]
 
 const CITIES = ['Tel Aviv','Jerusalem','Haifa','Rishon LeZion','Petah Tikva','Ashdod','Netanya','Beer Sheva','Herzliya','Ramat Gan','Other']
 
 const PRICE_TYPES = [
-  { value: 'fixed',     label: 'Fixed price',  icon: '📦', desc: 'One total price' },
-  { value: 'per_hour',  label: 'Per hour',     icon: '⏱',  desc: 'Hourly rate' },
-  { value: 'per_guest', label: 'Per guest',    icon: '👥', desc: 'Per head' },
+  { value: 'fixed',     label: 'מחיר קבוע', icon: '📦', desc: 'מחיר כולל' },
+  { value: 'per_hour',  label: 'לפי שעה',   icon: '⏱',  desc: 'תעריף שעתי' },
+  { value: 'per_guest', label: 'לאורח',     icon: '👥', desc: 'לנפש' },
 ]
 
 const PRICING_RULES = [
-  { type: 'weekend_surcharge', label: 'Weekend rate',     icon: '🌙', desc: 'Higher price Fri–Sat' },
-  { type: 'holiday',           label: 'Holiday rate',     icon: '🎊', desc: 'Holidays & special dates' },
-  { type: 'early_bird',        label: 'Early bird',       icon: '🚀', desc: 'Discount for advance booking' },
-  { type: 'last_minute',       label: 'Last-minute deal', icon: '⚡', desc: 'Discount within 2 weeks' },
+  { type: 'weekend_surcharge', label: 'תוספת סוף שבוע',  icon: '🌙', desc: 'מחיר גבוה יותר בשישי-שבת' },
+  { type: 'holiday',           label: 'תעריף חג',         icon: '🎊', desc: 'חגים ותאריכים מיוחדים' },
+  { type: 'early_bird',        label: 'הזמנה מוקדמת',    icon: '🚀', desc: 'הנחה לתפיסה מוקדמת' },
+  { type: 'last_minute',       label: 'עסקת דקה ה-90',   icon: '⚡', desc: 'הנחה בתוך 2 שבועות' },
 ]
 
 const PKG_BADGES = [
-  { value: 'most_popular',    label: '⭐ Most Popular' },
-  { value: 'best_value',      label: '💰 Best Value' },
-  { value: 'evo_recommended', label: '✦ EVO Recommended' },
+  { value: 'most_popular',    label: '⭐ הכי פופולרי' },
+  { value: 'best_value',      label: '💰 הכי משתלם' },
+  { value: 'evo_recommended', label: '✦ מומלץ EVO' },
 ]
 
 const BIO_HINTS = {
-  Sound:         ['Professional sound system for any venue size', 'Crystal-clear audio that fills every corner', 'From intimate dinners to 500-guest weddings'],
-  Lighting:      ['Transforming spaces with atmospheric lighting', 'LED and stage lighting for every mood', 'Custom lighting design for your event'],
-  Decor:         ['Bringing your floral vision to life', 'Organic textures, flowing greenery, warm tones', 'Every arrangement crafted from scratch'],
-  Bar:           ['Premium mobile bar for any event', 'Craft cocktails and personalized menus', 'Full bar setup including staff and equipment'],
-  Photography:   ['Capturing your most important moments', 'Documentary-style coverage, natural and real', 'High-end editing delivered within 2 weeks'],
-  Entertainment: ['Keeping the energy high all night', 'Reading the room and playing the right music', 'Professional DJ with 10+ years of experience'],
-  Catering:      ['Fresh seasonal menus tailored to your guests', 'Full service from setup to cleanup', 'Dietary options for every requirement'],
-  Transport:     ['Luxury transport for your guests', 'On-time, professional drivers', 'Fleet of vehicles for any group size'],
+  Sound:         ['מערכת הגברה מקצועית לכל גודל אולם', 'שמע צלול שממלא כל פינה', 'מארוחות קטנות ועד חתונות של 500 אורחים'],
+  Lighting:      ['הפיכת מרחבים עם תאורה אווירתית', 'תאורת LED ובמה לכל סגנון', 'עיצוב תאורה מותאם אישית לאירוע שלך'],
+  Decor:         ['מגשימים את חזון הפרחים שלך', 'מרקמים טבעיים, ירוק זורם, גוונים חמים', 'כל עיצוב נוצר ממאפס'],
+  Bar:           ['בר נייד פרמיום לכל אירוע', 'קוקטיילים מיוחדים ותפריטים מותאמים אישית', 'הקמת בר מלאה כולל צוות וציוד'],
+  Photography:   ['מתעדים את הרגעים החשובים ביותר שלך', 'צילום דוקומנטרי, טבעי ואמיתי', 'עריכה ברמה גבוהה ומסירה תוך שבועיים'],
+  Entertainment: ['שומרים על האנרגיה גבוהה כל הלילה', 'קוראים את הקהל ומנגנים את הדבר הנכון', 'DJ מקצועי עם 10+ שנות ניסיון'],
+  Catering:      ['תפריטים עונתיים טריים מותאמים לאורחים שלך', 'שירות מלא מהקמה ועד פינוי', 'אפשרויות תזונתיות לכל דרישה'],
+  Transport:     ['הסעה יוקרתית לאורחים שלך', 'נהגים מקצועיים שמגיעים בזמן', 'צי רכבים לכל גודל קבוצה'],
 }
 
 // ─── PACKAGE TEMPLATES ────────────────────────────────────────
@@ -76,89 +76,89 @@ const PACKAGE_TEMPLATES = {
   Sound: {
     types: ['Small Event (up to 150 guests)', 'Medium Event (150–300 guests)', 'Large Event (300–600 guests)', 'Premium / Festival (600+)'],
     fields: [
-      { key: 'speakers',    label: 'Speakers',      type: 'text',   ph: 'e.g. 2× JBL SRX815' },
-      { key: 'subwoofers',  label: 'Subwoofers',    type: 'text',   ph: 'e.g. 1× JBL SRX818', optional: true },
-      { key: 'mixer',       label: 'Mixer / Console', type: 'text', ph: 'e.g. Pioneer DJM-900' },
-      { key: 'microphones', label: 'Microphones',   type: 'number', ph: '2' },
-      { key: 'dj_connection', label: 'DJ Connection included', type: 'toggle' },
-      { key: 'technician',  label: 'Technician',    type: 'select', options: ['None', 'Setup only', 'Full event'] },
+      { key: 'speakers',    label: 'רמקולים',          type: 'text',   ph: 'לדוגמה: 2× JBL SRX815' },
+      { key: 'subwoofers',  label: 'סאבווופרים',       type: 'text',   ph: 'לדוגמה: 1× JBL SRX818', optional: true },
+      { key: 'mixer',       label: 'מיקסר / קונסולה',  type: 'text',   ph: 'לדוגמה: Pioneer DJM-900' },
+      { key: 'microphones', label: 'מיקרופונים',       type: 'number', ph: '2' },
+      { key: 'dj_connection', label: 'חיבור DJ כלול',  type: 'toggle' },
+      { key: 'technician',  label: 'טכנאי',            type: 'select', options: ['None', 'Setup only', 'Full event'] },
     ],
   },
   Lighting: {
     types: ['Basic Lighting', 'Party Lighting', 'Club Setup', 'Premium Production'],
     fields: [
-      { key: 'par_lights',   label: 'PAR Lights',     type: 'number', ph: '8' },
-      { key: 'moving_heads', label: 'Moving Heads',   type: 'number', ph: '4' },
-      { key: 'led_strips',   label: 'LED Strips',     type: 'text',   ph: 'e.g. 10m RGB strips', optional: true },
-      { key: 'fog_machine',  label: 'Fog Machine',    type: 'toggle' },
-      { key: 'laser',        label: 'Laser Show',     type: 'toggle', optional: true },
-      { key: 'operator',     label: 'Lighting Operator', type: 'select', options: ['None', 'Setup only', 'Full event'] },
+      { key: 'par_lights',   label: 'פנסי PAR',         type: 'number', ph: '8' },
+      { key: 'moving_heads', label: 'ראשים נעים',       type: 'number', ph: '4' },
+      { key: 'led_strips',   label: 'רצועות LED',       type: 'text',   ph: 'לדוגמה: 10 מטר RGB', optional: true },
+      { key: 'fog_machine',  label: 'מכונת עשן',        type: 'toggle' },
+      { key: 'laser',        label: 'תצוגת לייזר',      type: 'toggle', optional: true },
+      { key: 'operator',     label: 'מפעיל תאורה',      type: 'select', options: ['None', 'Setup only', 'Full event'] },
     ],
   },
   Decor: {
     types: ['Basic Setup', 'Styled Event', 'Premium Design', 'Instagram Experience'],
     fields: [
-      { key: 'floral',       label: 'Floral Arrangements', type: 'text',   ph: 'e.g. 10 table centerpieces' },
-      { key: 'centerpieces', label: 'Centerpieces',        type: 'number', ph: '10' },
-      { key: 'backdrop',     label: 'Backdrop included',   type: 'toggle' },
-      { key: 'color_scheme', label: 'Signature Color Scheme', type: 'text', ph: 'e.g. White & gold' },
-      { key: 'props',        label: 'Props & Accessories', type: 'text',   ph: 'e.g. Candles, lanterns', optional: true },
-      { key: 'setup_crew',   label: 'Setup Crew (people)', type: 'number', ph: '2' },
+      { key: 'floral',       label: 'סידורי פרחים',    type: 'text',   ph: 'לדוגמה: 10 סנטרפיסים לשולחן' },
+      { key: 'centerpieces', label: 'סנטרפיסים',       type: 'number', ph: '10' },
+      { key: 'backdrop',     label: 'רקע כלול',        type: 'toggle' },
+      { key: 'color_scheme', label: 'פלטת צבעים',      type: 'text',   ph: 'לדוגמה: לבן וזהב' },
+      { key: 'props',        label: 'פרופס ואביזרים',  type: 'text',   ph: 'לדוגמה: נרות, פנסים', optional: true },
+      { key: 'setup_crew',   label: 'צוות הקמה (אנשים)', type: 'number', ph: '2' },
     ],
   },
   Bar: {
     types: ['Basic Bar', 'Classic Bar', 'Premium Bar', 'Open Bar Luxury'],
     fields: [
-      { key: 'bartenders',       label: 'Bartenders',              type: 'number', ph: '2' },
-      { key: 'bar_equipment',    label: 'Bar Equipment',           type: 'text',   ph: 'e.g. Full mobile bar, ice machine' },
-      { key: 'alcohol_included', label: 'Alcohol included in price', type: 'toggle' },
-      { key: 'cocktail_menu',    label: 'Cocktail Menu',           type: 'text',   ph: 'e.g. 8 signature cocktails' },
-      { key: 'non_alcoholic',    label: 'Non-alcoholic options',   type: 'toggle' },
-      { key: 'hours_service',    label: 'Hours of Service',        type: 'number', ph: '5' },
+      { key: 'bartenders',       label: 'ברמנים',              type: 'number', ph: '2' },
+      { key: 'bar_equipment',    label: 'ציוד בר',             type: 'text',   ph: 'לדוגמה: בר נייד מלא, מכונת קרח' },
+      { key: 'alcohol_included', label: 'אלכוהול כלול במחיר', type: 'toggle' },
+      { key: 'cocktail_menu',    label: 'תפריט קוקטיילים',     type: 'text',   ph: 'לדוגמה: 8 קוקטיילים מיוחדים' },
+      { key: 'non_alcoholic',    label: 'אפשרויות ללא אלכוהול', type: 'toggle' },
+      { key: 'hours_service',    label: 'שעות שירות',          type: 'number', ph: '5' },
     ],
   },
   Photography: {
     types: ['Basic Coverage', 'Standard Event', 'Premium Coverage', 'Full Production'],
     fields: [
-      { key: 'photographers',  label: 'Photographers',          type: 'number', ph: '1' },
-      { key: 'videographers',  label: 'Videographers',          type: 'number', ph: '1', optional: true },
-      { key: 'hours_coverage', label: 'Hours of Coverage',      type: 'number', ph: '6' },
-      { key: 'editing_days',   label: 'Editing & Delivery (days)', type: 'number', ph: '14' },
-      { key: 'drone',          label: 'Drone footage',          type: 'toggle', optional: true },
-      { key: 'photo_booth',    label: 'Photo booth',            type: 'toggle', optional: true },
+      { key: 'photographers',  label: 'צלמים',              type: 'number', ph: '1' },
+      { key: 'videographers',  label: 'צלמי וידאו',         type: 'number', ph: '1', optional: true },
+      { key: 'hours_coverage', label: 'שעות צילום',         type: 'number', ph: '6' },
+      { key: 'editing_days',   label: 'עריכה ומסירה (ימים)', type: 'number', ph: '14' },
+      { key: 'drone',          label: 'צילום רחפן',         type: 'toggle', optional: true },
+      { key: 'photo_booth',    label: 'פוטו בוט',           type: 'toggle', optional: true },
     ],
   },
   Entertainment: {
     types: ['Basic Performer', 'Pro Performer', 'Headliner', 'Full Experience'],
     fields: [
-      { key: 'performers',        label: 'Number of Performers',  type: 'number', ph: '1' },
-      { key: 'performance_type',  label: 'Type of Performance',   type: 'text',   ph: 'e.g. DJ set, Live band, MC' },
-      { key: 'set_duration',      label: 'Set Duration (hours)',  type: 'number', ph: '3' },
-      { key: 'equipment',         label: 'Equipment included',    type: 'toggle' },
-      { key: 'sound_system',      label: 'Sound system included', type: 'toggle', optional: true },
-      { key: 'lighting_show',     label: 'Lighting show',         type: 'toggle', optional: true },
+      { key: 'performers',        label: 'מספר מופיעים',    type: 'number', ph: '1' },
+      { key: 'performance_type',  label: 'סוג הופעה',       type: 'text',   ph: 'לדוגמה: סט DJ, להקה חיה, MC' },
+      { key: 'set_duration',      label: 'משך הסט (שעות)',  type: 'number', ph: '3' },
+      { key: 'equipment',         label: 'ציוד כלול',       type: 'toggle' },
+      { key: 'sound_system',      label: 'מערכת הגברה כלולה', type: 'toggle', optional: true },
+      { key: 'lighting_show',     label: 'תצוגת תאורה',     type: 'toggle', optional: true },
     ],
   },
   Catering: {
     types: ['Finger Food', 'Buffet', 'Premium Catering', 'Live Stations'],
     fields: [
-      { key: 'dishes_count',   label: 'Number of Dishes',       type: 'number', ph: '12' },
-      { key: 'waitstaff',      label: 'Waitstaff Included',     type: 'number', ph: '3' },
-      { key: 'dietary',        label: 'Dietary Options',        type: 'text',   ph: 'e.g. Vegan, Gluten-free' },
-      { key: 'setup',          label: 'Setup & service included', type: 'toggle' },
-      { key: 'cleanup',        label: 'Cleanup included',       type: 'toggle' },
-      { key: 'kosher',         label: 'Kosher certified',       type: 'toggle' },
+      { key: 'dishes_count',   label: 'מספר מנות',          type: 'number', ph: '12' },
+      { key: 'waitstaff',      label: 'מלצרים',             type: 'number', ph: '3' },
+      { key: 'dietary',        label: 'אפשרויות תזונתיות',  type: 'text',   ph: 'לדוגמה: טבעוני, ללא גלוטן' },
+      { key: 'setup',          label: 'הקמה ושירות כלולים', type: 'toggle' },
+      { key: 'cleanup',        label: 'פינוי כלול',         type: 'toggle' },
+      { key: 'kosher',         label: 'כשר',                type: 'toggle' },
     ],
   },
   Transport: {
     types: ['Basic Shuttle', 'Group Transport', 'VIP Transport'],
     fields: [
-      { key: 'vehicles',        label: 'Number of Vehicles',    type: 'number', ph: '1' },
-      { key: 'vehicle_type',    label: 'Vehicle Type',          type: 'text',   ph: 'e.g. Minibus, Limousine, Van' },
-      { key: 'capacity',        label: 'Capacity per Vehicle',  type: 'number', ph: '20' },
-      { key: 'driver',          label: 'Driver included',       type: 'toggle' },
-      { key: 'hours',           label: 'Hours of Service',      type: 'number', ph: '4' },
-      { key: 'routes',          label: 'Routes / Area covered', type: 'text',   ph: 'e.g. Tel Aviv area', optional: true },
+      { key: 'vehicles',        label: 'מספר רכבים',        type: 'number', ph: '1' },
+      { key: 'vehicle_type',    label: 'סוג רכב',           type: 'text',   ph: 'לדוגמה: מיניבוס, לימוזינה, ון' },
+      { key: 'capacity',        label: 'קיבולת לרכב',       type: 'number', ph: '20' },
+      { key: 'driver',          label: 'נהג כלול',          type: 'toggle' },
+      { key: 'hours',           label: 'שעות שירות',        type: 'number', ph: '4' },
+      { key: 'routes',          label: 'מסלולים / אזור',    type: 'text',   ph: 'לדוגמה: אזור תל אביב', optional: true },
     ],
   },
 }
@@ -248,14 +248,57 @@ function Stepper({ value, onChange, min = 0, max = 999, label }) {
   )
 }
 
+function compressImage(file, maxPx = 400, quality = 0.65) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onerror = () => resolve(null)
+    reader.onload = (ev) => {
+      const img = new Image()
+      img.onerror = () => resolve(null)
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxPx / Math.max(img.width, img.height))
+          const canvas = document.createElement('canvas')
+          canvas.width  = Math.round(img.width  * scale)
+          canvas.height = Math.round(img.height * scale)
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+          resolve(canvas.toDataURL('image/jpeg', quality))
+        } catch {
+          resolve(null)
+        }
+      }
+      img.src = ev.target.result
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+async function readFileAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (ev) => resolve(ev.target.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 function PhotoUpload({ label, hint, value, onChange, aspect = 'square' }) {
   const ref = useRef()
-  const handleFile = (e) => {
+  const handleFile = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => onChange(ev.target.result)
-    reader.readAsDataURL(file)
+    const compressed = await compressImage(file)
+    if (compressed) {
+      onChange(compressed)
+    } else {
+      // Compression failed (e.g. unsupported format) — use original
+      try {
+        const raw = await readFileAsDataURL(file)
+        onChange(raw)
+      } catch {
+        // ignore — nothing to show
+      }
+    }
   }
   const isLandscape = aspect === 'landscape'
   return (
@@ -266,7 +309,7 @@ function PhotoUpload({ label, hint, value, onChange, aspect = 'square' }) {
       {value ? (
         <div className={`relative rounded-[16px] overflow-hidden border-[1.5px] border-evo-purple-mid ${isLandscape ? 'h-32' : 'w-24 h-24'}`}>
           <img src={value} alt="" className="w-full h-full object-cover" />
-          <button onClick={() => onChange(null)}
+          <button onClick={() => { onChange(null); if (ref.current) ref.current.value = '' }}
             className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">
             <X size={12} className="text-white" />
           </button>
@@ -274,8 +317,8 @@ function PhotoUpload({ label, hint, value, onChange, aspect = 'square' }) {
       ) : (
         <button onClick={() => ref.current?.click()}
           className={`flex flex-col items-center justify-center gap-2 border-[1.5px] border-dashed border-evo-dim rounded-[16px] bg-evo-elevated transition-all hover:border-evo-purple-mid ${isLandscape ? 'w-full h-32' : 'w-24 h-24'}`}>
-          {isLandscape ? <Image size={20} className="text-evo-muted" /> : <Camera size={20} className="text-evo-muted" />}
-          <span className="text-[10px] font-bold text-evo-muted text-center px-2">{isLandscape ? 'Add photo' : 'Upload'}</span>
+          {isLandscape ? <ImageIcon size={20} className="text-evo-muted" /> : <Camera size={20} className="text-evo-muted" />}
+          <span className="text-[10px] font-bold text-evo-muted text-center px-2">{isLandscape ? 'הוסף תמונה' : 'העלה'}</span>
         </button>
       )}
     </div>
@@ -289,7 +332,7 @@ function TemplateField({ field, value, onChange }) {
       <div className="flex items-center justify-between bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3">
         <div>
           <p className="text-sm font-bold text-evo-text">{field.label}</p>
-          {field.optional && <p className="text-[10px] text-evo-muted font-medium">Optional</p>}
+          {field.optional && <p className="text-[10px] text-evo-muted font-medium">אופציונלי</p>}
         </div>
         <button onClick={() => onChange(!on)}
           className={`w-11 h-6 rounded-full transition-all ${on ? 'bg-evo-purple-mid' : 'bg-evo-border'}`}>
@@ -302,7 +345,7 @@ function TemplateField({ field, value, onChange }) {
     return (
       <div>
         <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
-          {field.label}{field.optional && <span className="ml-1 normal-case text-[10px]">· Optional</span>}
+          {field.label}{field.optional && <span className="ml-1 normal-case text-[10px]">· אופציונלי</span>}
         </label>
         <div className="flex flex-wrap gap-2">
           {field.options.map(opt => (
@@ -321,7 +364,7 @@ function TemplateField({ field, value, onChange }) {
   return (
     <div>
       <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
-        {field.label}{field.optional && <span className="ml-1 normal-case text-[10px]">· Optional</span>}
+        {field.label}{field.optional && <span className="ml-1 normal-case text-[10px]">· אופציונלי</span>}
       </label>
       <input
         type={field.type === 'number' ? 'number' : 'text'}
@@ -336,7 +379,7 @@ function TemplateField({ field, value, onChange }) {
 
 // ─── MAIN COMPONENT ────────────────────────────────────────────
 export default function Onboarding() {
-  const { navigate, setSupplierName, user, loadSupplierData } = useSupplier()
+  const { navigate, setSupplierName, user, loadSupplierData, logout } = useSupplier()
   const [step, setStep] = useState(0)
   const [validationError, setValidationError] = useState('')
   const [saving, setSaving] = useState(false)
@@ -500,18 +543,25 @@ export default function Onboarding() {
           // 2. Save first package to vendors/{uid}/packages/
           const pkgRef = collection(db, 'vendors', uid, 'packages')
           const pkgDoc = await addDoc(pkgRef, {
-            vendor_id:    uid,
-            name:         pkgTypeName,
-            description:  pkgDesc,
-            price:        parseFloat(pkgPrice),
-            price_type:   pkgPriceType || 'fixed',
-            min_guests:   parseInt(pkgMinGuests) || 0,
-            max_guests:   parseInt(pkgMaxGuests) || 0,
-            min_hours:    parseInt(pkgMinHours) || 0,
-            is_popular:   pkgBadge === 'most_popular',
-            is_available: true,
-            sort_order:   0,
-            created_at:   serverTimestamp(),
+            vendor_id:      uid,
+            name:           pkgTypeName,
+            description:    pkgDesc,
+            price:          parseFloat(pkgPrice),
+            price_type:     pkgPriceType || 'fixed',
+            min_guests:     parseInt(pkgMinGuests) || 0,
+            max_guests:     parseInt(pkgMaxGuests) || 0,
+            min_hours:      parseInt(pkgMinHours) || 0,
+            duration_hours: parseInt(pkgDuration) || 0,
+            setup_time:     parseInt(setupTime) || 0,
+            staff_included: staffIncluded || false,
+            add_ons:        pkgAddOns || [],
+            badge:          pkgBadge || null,
+            is_popular:     pkgBadge === 'most_popular',
+            image_url:      pkgImage || null,
+            template_data:  Object.keys(templateValues).length > 0 ? templateValues : null,
+            is_available:   true,
+            sort_order:     0,
+            created_at:     serverTimestamp(),
           })
           // Patch the id field into the doc
           await setDoc(doc(db, 'vendors', uid, 'packages', pkgDoc.id), { id: pkgDoc.id }, { merge: true })
@@ -587,7 +637,7 @@ export default function Onboarding() {
     }
   }
 
-  const back = () => step === 0 ? navigate('entry') : setStep(s => s - 1)
+  const back = () => step === 0 ? logout() : setStep(s => s - 1)
 
   const slide = { initial: { opacity: 0, x: 24 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -24 }, transition: { duration: 0.22 } }
 
@@ -601,11 +651,11 @@ export default function Onboarding() {
           {/* ── 0: Category ── */}
           {step === 0 && (
             <motion.div key="cat" {...slide} className="px-6 pb-6">
-              <StepTitle title="What do you offer?" sub="Choose your main service category" />
+              <StepTitle title="מה אתה מציע?" sub="בחר את קטגוריית השירות הראשית שלך" />
               <div className="space-y-2.5">
                 {CATEGORIES.map(cat => (
                   <button key={cat.name} onClick={() => setCategory(cat.name)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-[20px] border-[1.5px] transition-all text-left ${
+                    className={`w-full flex items-center gap-4 p-4 rounded-[20px] border-[1.5px] transition-all text-start ${
                       category === cat.name ? 'bg-evo-elevated border-evo-purple-mid' : 'bg-white border-evo-border'
                     }`}>
                     <span className="text-2xl">{cat.icon}</span>
@@ -627,17 +677,17 @@ export default function Onboarding() {
           {/* ── 1: Business Identity ── */}
           {step === 1 && (
             <motion.div key="identity" {...slide} className="px-6 pb-6 space-y-5">
-              <StepTitle title={`Introduce your ${category} business`} sub="Tell EVO who you are" />
+              <StepTitle title={`הצג את עסק ה${category} שלך`} sub="ספר ל-EVO מי אתה" />
 
-              <InputField label="Business name" value={bizName} onChange={e => setBizName(e.target.value)} placeholder="e.g. Studio Sound Pro" />
-              <InputField label="Your name" value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="e.g. Yael Cohen" />
+              <InputField label="שם העסק" value={bizName} onChange={e => setBizName(e.target.value)} placeholder="לדוגמה: Studio Sound Pro" />
+              <InputField label="השם שלך" value={ownerName} onChange={e => setOwnerName(e.target.value)} placeholder="לדוגמה: יעל כהן" />
 
               <div>
-                <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">How long have you been doing this?</label>
+                <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">כמה זמן אתה בתחום?</label>
                 <div className="grid grid-cols-2 gap-2">
                   {EXPERIENCE_OPTIONS.map(opt => (
                     <button key={opt.value} onClick={() => setExperience(opt.value)}
-                      className={`flex items-center gap-2.5 p-3.5 rounded-[16px] border-[1.5px] transition-all text-left ${
+                      className={`flex items-center gap-2.5 p-3.5 rounded-[16px] border-[1.5px] transition-all text-start ${
                         experience === opt.value ? 'bg-evo-elevated border-evo-purple-mid' : 'bg-white border-evo-border'
                       }`}>
                       <span className="text-xl">{opt.icon}</span>
@@ -648,7 +698,7 @@ export default function Onboarding() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">Team size</label>
+                <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">גודל הצוות</label>
                 <div className="grid grid-cols-4 gap-2">
                   {TEAM_OPTIONS.map(opt => (
                     <button key={opt.value} onClick={() => setTeamSize(opt.value)}
@@ -667,13 +717,13 @@ export default function Onboarding() {
           {/* ── 2: Contact & Location ── */}
           {step === 2 && (
             <motion.div key="contact" {...slide} className="px-6 pb-6 space-y-5">
-              <StepTitle title="How to reach you" sub="Clients contact you through EVO" />
+              <StepTitle title="איך ליצור איתך קשר" sub="לקוחות יוצרים קשר דרך EVO" />
 
-              <InputField label="Phone number" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+972 50 000 0000" />
+              <InputField label="מספר טלפון" type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+972 50 000 0000" />
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-evo-muted uppercase tracking-wider">WhatsApp</label>
+                  <label className="text-xs font-bold text-evo-muted uppercase tracking-wider">וואצאפ</label>
                   <button onClick={() => setSameWhatsApp(p => !p)}
                     className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full border-[1.5px] transition-all ${
                       sameWhatsApp ? 'bg-evo-elevated border-evo-purple-mid text-evo-purple' : 'border-evo-border text-evo-muted'
@@ -681,7 +731,7 @@ export default function Onboarding() {
                     <div className={`w-3.5 h-3.5 rounded-sm flex items-center justify-center ${sameWhatsApp ? 'bg-evo-purple-mid' : 'border border-evo-muted'}`}>
                       {sameWhatsApp && <Check size={9} className="text-white" />}
                     </div>
-                    Same as phone
+                    זהה לטלפון
                   </button>
                 </div>
                 {!sameWhatsApp && (
@@ -691,7 +741,7 @@ export default function Onboarding() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">Preferred contact</label>
+                <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">אמצעי קשר מועדף</label>
                 <div className="grid grid-cols-3 gap-2">
                   {CONTACT_OPTIONS.map(opt => (
                     <button key={opt.value} onClick={() => setPreferredContact(opt.value)}
@@ -706,14 +756,14 @@ export default function Onboarding() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">Your city</label>
+                <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">העיר שלך</label>
                 <div className="flex flex-wrap gap-2">
                   {CITIES.map(c => (
                     <Chip key={c} selected={city === c} onClick={() => setCity(c)}>{c}</Chip>
                   ))}
                 </div>
                 {city === 'Other' && (
-                  <input type="text" value={customCity} onChange={e => setCustomCity(e.target.value)} placeholder="Type your city"
+                  <input type="text" value={customCity} onChange={e => setCustomCity(e.target.value)} placeholder="הקלד את עירך"
                     className="mt-3 w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3.5 text-evo-text text-[15px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors" />
                 )}
               </div>
@@ -723,39 +773,39 @@ export default function Onboarding() {
           {/* ── 3: Your Story ── */}
           {step === 3 && (
             <motion.div key="story" {...slide} className="px-6 pb-6 space-y-5">
-              <StepTitle title="Tell your story" sub="This shows on your EVO profile" />
+              <StepTitle title="ספר את הסיפור שלך" sub="מופיע בפרופיל EVO שלך" />
 
               {/* Profile photo */}
               <div className="flex items-start gap-4">
                 <PhotoUpload
-                  label="Profile photo"
-                  hint="A face builds trust — suppliers with photos get 2× more views"
+                  label="תמונת פרופיל"
+                  hint="פנים בונות אמון — ספקים עם תמונה מקבלים פי 2 יותר צפיות"
                   value={profilePhoto}
                   onChange={setProfilePhoto}
                   aspect="square"
                 />
                 <div className="flex-1 pt-7">
                   <p className="text-xs font-semibold text-evo-muted leading-relaxed">
-                    Upload a professional photo of yourself or your team. PNG, JPG or WEBP.
+                    העלה תמונה מקצועית שלך או של הצוות. PNG, JPG או WEBP.
                   </p>
                 </div>
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-evo-muted uppercase tracking-wider">About your business</label>
+                  <label className="text-xs font-bold text-evo-muted uppercase tracking-wider">על העסק שלך</label>
                   <span className={`text-xs font-bold ${bio.length > 20 ? 'text-evo-green' : 'text-evo-muted'}`}>{bio.length} / 300</span>
                 </div>
-                <textarea value={bio} onChange={e => setBio(e.target.value.slice(0, 300))} rows={4} placeholder="Describe what makes you stand out…"
+                <textarea value={bio} onChange={e => setBio(e.target.value.slice(0, 300))} rows={4} placeholder="תאר מה מייחד אותך…"
                   className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3.5 text-evo-text text-[15px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors resize-none" />
 
                 {bio.length < 50 && (
                   <div className="mt-3">
-                    <p className="text-[10px] font-bold text-evo-muted uppercase tracking-wider mb-2">✦ Tap to add</p>
+                    <p className="text-[10px] font-bold text-evo-muted uppercase tracking-wider mb-2">✦ לחץ להוספה</p>
                     <div className="flex flex-wrap gap-2">
                       {(BIO_HINTS[category] || BIO_HINTS.Sound).map(hint => (
                         <button key={hint} onClick={() => appendBio(hint)}
-                          className="text-xs font-semibold px-3 py-1.5 bg-evo-elevated border-[1.5px] border-evo-dim text-evo-purple rounded-full text-left">
+                          className="text-xs font-semibold px-3 py-1.5 bg-evo-elevated border-[1.5px] border-evo-dim text-evo-purple rounded-full text-start">
                           + {hint}
                         </button>
                       ))}
@@ -765,7 +815,7 @@ export default function Onboarding() {
               </div>
 
               <div>
-                <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">Instagram</label>
+                <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">אינסטגרם</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-evo-muted font-bold">@</span>
                   <input type="text" value={instagram} onChange={e => setInstagram(e.target.value.replace('@', ''))} placeholder="yourbusiness"
@@ -775,8 +825,8 @@ export default function Onboarding() {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs font-bold text-evo-muted uppercase tracking-wider">Website</label>
-                  <span className="text-[10px] font-bold text-evo-muted bg-evo-elevated px-2 py-0.5 rounded-full">Optional</span>
+                  <label className="text-xs font-bold text-evo-muted uppercase tracking-wider">אתר אינטרנט</label>
+                  <span className="text-[10px] font-bold text-evo-muted bg-evo-elevated px-2 py-0.5 rounded-full">אופציונלי</span>
                 </div>
                 <input type="url" value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourbusiness.com"
                   className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3.5 text-evo-text text-[15px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors" />
@@ -788,14 +838,14 @@ export default function Onboarding() {
           {step === 4 && (
             <motion.div key="package" {...slide} className="px-6 pb-6 space-y-5">
               <StepTitle
-                title="Build your first package"
-                sub={<span className="flex items-center gap-1.5"><Zap size={13} className="text-evo-accent" /><span className="text-evo-accent font-bold">Suppliers with packages get 3× more bookings</span></span>}
+                title="בנה את החבילה הראשונה שלך"
+                sub={<span className="flex items-center gap-1.5"><Zap size={13} className="text-evo-accent" /><span className="text-evo-accent font-bold">ספקים עם חבילות מקבלים פי 3 יותר הזמנות</span></span>}
               />
 
               {/* Package image */}
               <PhotoUpload
-                label="Package photo"
-                hint="Show clients what they're getting — a great photo drives bookings"
+                label="תמונת חבילה"
+                hint="הראה ללקוחות מה הם מקבלים — תמונה טובה מגדילה הזמנות"
                 value={pkgImage}
                 onChange={setPkgImage}
                 aspect="landscape"
@@ -804,11 +854,11 @@ export default function Onboarding() {
               {/* Package type selector */}
               {tpl && (
                 <div>
-                  <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">Package type</label>
+                  <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">סוג חבילה</label>
                   <div className="space-y-2">
                     {tpl.types.map(t => (
                       <button key={t} onClick={() => setPkgTypeName(t)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] border-[1.5px] transition-all text-left ${
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] border-[1.5px] transition-all text-start ${
                           pkgTypeName === t ? 'bg-evo-elevated border-evo-purple-mid' : 'bg-white border-evo-border'
                         }`}>
                         <div className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center shrink-0 transition-all ${
@@ -825,7 +875,7 @@ export default function Onboarding() {
 
               {/* Pricing model */}
               <div>
-                <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">Pricing model</label>
+                <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">מודל תמחור</label>
                 <div className="grid grid-cols-3 gap-2">
                   {PRICE_TYPES.map(pt => (
                     <button key={pt.value} onClick={() => setPkgPriceType(pt.value)}
@@ -843,7 +893,7 @@ export default function Onboarding() {
               {/* Price */}
               <div>
                 <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
-                  Price {pkgPriceType === 'per_hour' ? '(per hour)' : pkgPriceType === 'per_guest' ? '(per person)' : ''}
+                  מחיר {pkgPriceType === 'per_hour' ? '(לשעה)' : pkgPriceType === 'per_guest' ? '(לאורח)' : ''}
                 </label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-evo-muted font-bold">₪</span>
@@ -854,19 +904,19 @@ export default function Onboarding() {
 
               {/* Guests & Duration */}
               <div className="grid grid-cols-2 gap-3">
-                <Stepper label="Min guests"  value={pkgMinGuests} onChange={setPkgMinGuests} min={0} />
-                <Stepper label="Max guests"  value={pkgMaxGuests} onChange={setPkgMaxGuests} min={0} />
+                <Stepper label="מינ. אורחים"  value={pkgMinGuests} onChange={setPkgMinGuests} min={0} />
+                <Stepper label="מקס. אורחים" value={pkgMaxGuests} onChange={setPkgMaxGuests} min={0} />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <Stepper label="Min hours"   value={pkgMinHours}  onChange={setPkgMinHours}  min={1} max={24} />
-                <Stepper label="Setup time (h)" value={setupTime} onChange={setSetupTime}    min={0} max={12} />
+                <Stepper label="מינ. שעות"      value={pkgMinHours}  onChange={setPkgMinHours}  min={1} max={24} />
+                <Stepper label="זמן הכנה (שע׳)" value={setupTime} onChange={setSetupTime}    min={0} max={12} />
               </div>
 
               {/* Staff included toggle */}
               <div className="flex items-center justify-between bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3">
                 <div>
-                  <p className="text-sm font-bold text-evo-text">Staff included in price</p>
-                  <p className="text-xs text-evo-muted font-medium">Technician, bartender, photographer, etc.</p>
+                  <p className="text-sm font-bold text-evo-text">צוות כלול במחיר</p>
+                  <p className="text-xs text-evo-muted font-medium">טכנאי, ברמן, צלם, וכו׳</p>
                 </div>
                 <button onClick={() => setStaffIncluded(p => !p)}
                   className={`w-11 h-6 rounded-full transition-all ${staffIncluded ? 'bg-evo-purple-mid' : 'bg-evo-border'}`}>
@@ -876,22 +926,22 @@ export default function Onboarding() {
 
               {/* Description — MANDATORY */}
               <div>
-                <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">Package description</label>
+                <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">תיאור החבילה</label>
                 <p className="text-xs text-evo-muted font-medium mb-2">
-                  Describe what's included in this package and which products or equipment are provided. Be specific — clients want to know exactly what they're booking.
+                  תאר מה כלול בחבילה הזו ואיזה ציוד מסופק. היה ספציפי — לקוחות רוצים לדעת בדיוק מה הם מזמינים.
                 </p>
                 <textarea value={pkgDesc} onChange={e => setPkgDesc(e.target.value)} rows={4}
-                  placeholder="e.g. Includes 2 JBL SRX815 speakers, 1 subwoofer, Pioneer DJM-900 mixer, 2 wireless microphones, and a full-event technician. Setup takes 2 hours and covers venues up to 300 guests."
+                  placeholder="לדוגמה: כולל 2 רמקולי JBL SRX815, סאב אחד, מיקסר Pioneer DJM-900, 2 מיקרופונים אלחוטיים וטכנאי לכל האירוע. הקמה של 2 שעות, מתאים לאולמות עד 300 אורחים."
                   className={`w-full bg-white border-[1.5px] rounded-xl px-4 py-3.5 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none transition-colors resize-none ${
                     pkgDesc.length > 10 ? 'border-evo-green' : 'border-evo-border focus:border-evo-purple-mid'
                   }`} />
-                <p className={`text-xs font-bold mt-1 text-right ${pkgDesc.length > 10 ? 'text-evo-green' : 'text-evo-muted'}`}>{pkgDesc.length} chars</p>
+                <p className={`text-xs font-bold mt-1 text-right ${pkgDesc.length > 10 ? 'text-evo-green' : 'text-evo-muted'}`}>{pkgDesc.length} תווים</p>
               </div>
 
               {/* Category template fields */}
               {tpl && pkgTypeName && (
                 <div className="space-y-3">
-                  <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">What's included — {pkgTypeName.split('(')[0].trim()}</p>
+                  <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">מה כלול — {pkgTypeName.split('(')[0].trim()}</p>
                   {tpl.fields.map(field => (
                     <TemplateField
                       key={field.key}
@@ -905,14 +955,14 @@ export default function Onboarding() {
 
               {/* Add-ons */}
               <div>
-                <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">Add-ons <span className="normal-case font-medium">(optional extras clients can request)</span></label>
+                <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">תוספות <span className="normal-case font-medium">(תוספות שלקוחות יכולים לבקש)</span></label>
                 <div className="flex gap-2 mb-2">
                   <input
                     type="text"
                     value={addOnInput}
                     onChange={e => setAddOnInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addAddOn()}
-                    placeholder="e.g. Extra microphone, LED truss…"
+                    placeholder="לדוגמה: מיקרופון נוסף, ריגינג LED…"
                     className="flex-1 bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors"
                   />
                   <button onClick={addAddOn}
@@ -936,7 +986,7 @@ export default function Onboarding() {
 
               {/* Package badge */}
               <div>
-                <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">Package badge <span className="normal-case font-medium text-[10px]">· Optional</span></label>
+                <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">תגית חבילה <span className="normal-case font-medium text-[10px]">· אופציונלי</span></label>
                 <div className="flex flex-wrap gap-2">
                   {PKG_BADGES.map(b => (
                     <button key={b.value} onClick={() => setPkgBadge(pkgBadge === b.value ? null : b.value)}
@@ -955,8 +1005,8 @@ export default function Onboarding() {
           {step === 5 && (
             <motion.div key="products" {...slide} className="px-6 pb-6 space-y-5">
               <StepTitle
-                title="Individual products"
-                sub="Add single items clients can book à la carte — optional but recommended"
+                title="מוצרים בודדים"
+                sub="הוסף פריטים שלקוחות יכולים להזמין בנפרד — לא חובה אך מומלץ"
               />
 
               {/* Existing products */}
@@ -969,8 +1019,8 @@ export default function Onboarding() {
                         {p.description && <p className="text-xs text-evo-muted font-medium mt-0.5 truncate">{p.description}</p>}
                         <div className="flex items-center gap-2 mt-1.5">
                           <span className="text-sm font-extrabold text-evo-purple">₪{Number(p.price).toLocaleString()}</span>
-                          <span className="text-[10px] font-semibold text-evo-muted bg-evo-elevated px-2 py-0.5 rounded-full">{p.price_type === 'per_hour' ? '/hr' : p.price_type === 'per_guest' ? '/guest' : 'fixed'}</span>
-                          {p.max_guests && <span className="text-[10px] text-evo-muted">max {p.max_guests} guests</span>}
+                          <span className="text-[10px] font-semibold text-evo-muted bg-evo-elevated px-2 py-0.5 rounded-full">{p.price_type === 'per_hour' ? '/שעה' : p.price_type === 'per_guest' ? '/אורח' : 'קבוע'}</span>
+                          {p.max_guests && <span className="text-[10px] text-evo-muted">מקס. {p.max_guests} אורחים</span>}
                         </div>
                       </div>
                       <button onClick={() => removeProduct(p.id)}
@@ -984,22 +1034,22 @@ export default function Onboarding() {
 
               {/* Add product form */}
               <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-4 space-y-4">
-                <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">Add a product</p>
+                <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">הוסף מוצר</p>
 
-                <InputField label="Product name" value={editProduct.name}
+                <InputField label="שם המוצר" value={editProduct.name}
                   onChange={e => setEditProduct(p => ({ ...p, name: e.target.value }))}
-                  placeholder="e.g. Extra subwoofer, DJ table, Photo album" />
+                  placeholder="לדוגמה: סאב נוסף, שולחן DJ, אלבום תמונות" />
 
                 <div>
-                  <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">Description <span className="normal-case font-medium text-[10px]">· Optional</span></label>
+                  <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">תיאור <span className="normal-case font-medium text-[10px]">· אופציונלי</span></label>
                   <textarea value={editProduct.description} rows={2}
                     onChange={e => setEditProduct(p => ({ ...p, description: e.target.value }))}
-                    placeholder="Brief description of this item"
+                    placeholder="תיאור קצר של הפריט"
                     className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors resize-none" />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">Pricing model</label>
+                  <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">מודל תמחור</label>
                   <div className="grid grid-cols-3 gap-2">
                     {PRICE_TYPES.map(pt => (
                       <button key={pt.value} onClick={() => setEditProduct(p => ({ ...p, price_type: pt.value }))}
@@ -1015,7 +1065,7 @@ export default function Onboarding() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">Price (₪)</label>
+                    <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">מחיר (₪)</label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-evo-muted font-bold text-sm">₪</span>
                       <input type="number" value={editProduct.price}
@@ -1025,7 +1075,7 @@ export default function Onboarding() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">Max guests <span className="normal-case font-medium text-[10px]">· Opt.</span></label>
+                    <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">מקס. אורחים <span className="normal-case font-medium text-[10px]">· אופ׳</span></label>
                     <input type="number" value={editProduct.max_guests}
                       onChange={e => setEditProduct(p => ({ ...p, max_guests: e.target.value }))}
                       placeholder="—"
@@ -1037,7 +1087,7 @@ export default function Onboarding() {
                   disabled={!editProduct.name || !editProduct.price}
                   className="w-full py-3 rounded-xl text-sm font-extrabold text-white transition-all disabled:opacity-30"
                   style={{ background: '#2D1B8A' }}>
-                  <Plus size={14} className="inline mr-1.5" />Add product
+                  <Plus size={14} className="inline mr-1.5" />הוסף מוצר
                 </button>
               </div>
 
@@ -1045,7 +1095,7 @@ export default function Onboarding() {
                 <div className="flex items-center gap-3 py-3 px-4 bg-white rounded-[16px] border-[1.5px] border-evo-border">
                   <span className="text-2xl">💡</span>
                   <p className="text-xs text-evo-muted font-semibold leading-relaxed">
-                    You can skip this and add individual products anytime from your Catalog.
+                    ניתן לדלג ולהוסיף מוצרים בודדים בכל עת מהקטלוג שלך.
                   </p>
                 </div>
               )}
@@ -1055,7 +1105,7 @@ export default function Onboarding() {
           {/* ── 6: Pricing Rules ── */}
           {step === 6 && (
             <motion.div key="pricing" {...slide} className="px-6 pb-6">
-              <StepTitle title="Any special pricing?" sub="EVO shows these automatically to clients" />
+              <StepTitle title="יש תמחור מיוחד?" sub="EVO מציג אלה ללקוחות אוטומטית" />
 
               <div className="space-y-3 mb-5">
                 {PRICING_RULES.map(rule => {
@@ -1063,7 +1113,7 @@ export default function Onboarding() {
                   return (
                     <div key={rule.type}>
                       <button onClick={() => togglePricingRule(rule.type)}
-                        className={`w-full flex items-center gap-4 p-4 rounded-[20px] border-[1.5px] transition-all text-left ${
+                        className={`w-full flex items-center gap-4 p-4 rounded-[20px] border-[1.5px] transition-all text-start ${
                           active ? 'bg-evo-elevated border-evo-purple-mid' : 'bg-white border-evo-border'
                         }`}>
                         <span className="text-2xl">{rule.icon}</span>
@@ -1099,7 +1149,7 @@ export default function Onboarding() {
                               placeholder={pricingRules[rule.type]?.adjustType === 'percent' ? '10' : '500'}
                               className="flex-1 bg-white border-[1.5px] border-evo-border rounded-xl px-3 py-2 text-evo-text text-sm font-bold focus:outline-none focus:border-evo-purple-mid transition-colors" />
                             <span className="text-xs font-bold text-evo-muted">
-                              {pricingRules[rule.type]?.adjustType === 'percent' ? '% change' : '₪ change'}
+                              {pricingRules[rule.type]?.adjustType === 'percent' ? '% שינוי' : '₪ שינוי'}
                             </span>
                           </div>
                         </motion.div>
@@ -1112,7 +1162,7 @@ export default function Onboarding() {
               <div className="flex items-center gap-3 py-3 px-4 bg-white rounded-[16px] border-[1.5px] border-evo-border">
                 <span className="text-2xl">💡</span>
                 <p className="text-xs text-evo-muted font-semibold leading-relaxed">
-                  You can skip this and add pricing rules anytime from your dashboard.
+                  ניתן לדלג ולהוסיף כללי תמחור בכל עת מהדשבורד שלך.
                 </p>
               </div>
             </motion.div>
@@ -1121,12 +1171,12 @@ export default function Onboarding() {
           {/* ── 7: Documents ── */}
           {step === 7 && (
             <motion.div key="documents" {...slide} className="px-6 pb-6">
-              <StepTitle title="Official documents" sub="Verified suppliers get 60% more leads" />
+              <StepTitle title="מסמכים רשמיים" sub="ספקים מאומתים מקבלים 60% יותר לידים" />
 
               <div className="space-y-3 mb-6">
                 {[
-                  { key: 'insurance', state: hasInsurance, setState: setHasInsurance, icon: '🛡️', title: 'Business Insurance', desc: 'Liability coverage certificate' },
-                  { key: 'license',   state: hasLicense,   setState: setHasLicense,   icon: '📋', title: 'Business License',   desc: 'Osek murshe / Company registration' },
+                  { key: 'insurance', state: hasInsurance, setState: setHasInsurance, icon: '🛡️', title: 'ביטוח עסקי',   desc: 'תעודת ביטוח אחריות' },
+                  { key: 'license',   state: hasLicense,   setState: setHasLicense,   icon: '📋', title: 'רישיון עסק',   desc: 'עוסק מורשה / רישום חברה' },
                 ].map(doc => (
                   <div key={doc.key} className={`bg-white rounded-[20px] border-[1.5px] p-4 transition-all ${
                     doc.state === true ? 'border-evo-green' : 'border-evo-border'
@@ -1148,13 +1198,13 @@ export default function Onboarding() {
                         className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold border-[1.5px] transition-all ${
                           doc.state === true ? 'bg-evo-green/10 border-evo-green text-evo-green' : 'border-evo-border text-evo-muted'
                         }`}>
-                        ✓ I have it
+                        ✓ יש לי
                       </button>
                       <button onClick={() => doc.setState(false)}
                         className={`flex-1 py-2.5 rounded-xl text-xs font-extrabold border-[1.5px] transition-all ${
                           doc.state === false ? 'bg-evo-elevated border-evo-purple-mid text-evo-purple' : 'border-evo-border text-evo-muted'
                         }`}>
-                        Not yet
+                        עדיין לא
                       </button>
                     </div>
                   </div>
@@ -1162,7 +1212,7 @@ export default function Onboarding() {
               </div>
 
               <div className="text-center">
-                <p className="text-xs text-evo-muted font-semibold">Documents can be uploaded later from your Profile settings.</p>
+                <p className="text-xs text-evo-muted font-semibold">ניתן להעלות מסמכים מאוחר יותר מהגדרות הפרופיל.</p>
               </div>
             </motion.div>
           )}
@@ -1173,16 +1223,16 @@ export default function Onboarding() {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-4"
                 style={{ borderRadius: 50, background: '#EEF0FF', border: '1.5px solid #C5B8F0' }}>
                 <span className="text-evo-accent font-extrabold text-sm">✦</span>
-                <span className="text-xs font-bold text-evo-purple">Profile Analysis</span>
+                <span className="text-xs font-bold text-evo-purple">ניתוח פרופיל</span>
               </div>
               <h2 className="text-[24px] font-extrabold text-evo-text mb-1" style={{ letterSpacing: '-0.5px' }}>
-                Your profile is<br />ready to go live.
+                הפרופיל שלך<br />מוכן להפעלה.
               </h2>
-              <p className="text-sm font-semibold text-evo-muted mb-6">EVO analyzed your profile completeness</p>
+              <p className="text-sm font-semibold text-evo-muted mb-6">EVO ניתח את שלמות הפרופיל שלך</p>
 
               <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-5 mb-4">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-bold text-evo-text">Profile Strength</p>
+                  <p className="text-sm font-bold text-evo-text">חוזק הפרופיל</p>
                   <p className="text-2xl font-extrabold text-evo-purple">
                     {Math.min(100, 35 + (bio.length > 50 ? 10 : 0) + (profilePhoto ? 5 : 0) + (instagram ? 5 : 0) + (pkgTypeName ? 10 : 0) + (pkgImage ? 5 : 0) + (products.length > 0 ? 5 : 0) + (Object.keys(pricingRules).length > 0 ? 10 : 0) + (hasInsurance ? 8 : 0) + (hasLicense ? 7 : 0))}%
                   </p>
@@ -1197,14 +1247,14 @@ export default function Onboarding() {
 
               <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-5 space-y-4 mb-4">
                 {[
-                  { label: 'Category & Identity',  value: 95 },
-                  { label: 'Profile Photo',         value: profilePhoto ? 100 : 0 },
-                  { label: 'Contact Info',          value: phone ? 100 : 40 },
-                  { label: 'Package Ready',         value: pkgTypeName && pkgDesc.length > 10 ? 100 : 30 },
-                  { label: 'Package Photo',         value: pkgImage ? 100 : 20 },
-                  { label: 'Products Listed',       value: products.length > 0 ? 100 : 0 },
-                  { label: 'Story & Social',        value: bio.length > 50 ? 90 : 40 },
-                  { label: 'Documents',             value: (hasInsurance && hasLicense) ? 100 : hasInsurance || hasLicense ? 60 : 20 },
+                  { label: 'קטגוריה וזהות',  value: 95 },
+                  { label: 'תמונת פרופיל',   value: profilePhoto ? 100 : 0 },
+                  { label: 'פרטי קשר',       value: phone ? 100 : 40 },
+                  { label: 'חבילה מוכנה',    value: pkgTypeName && pkgDesc.length > 10 ? 100 : 30 },
+                  { label: 'תמונת חבילה',    value: pkgImage ? 100 : 20 },
+                  { label: 'מוצרים רשומים',  value: products.length > 0 ? 100 : 0 },
+                  { label: 'סיפור ורשתות',   value: bio.length > 50 ? 90 : 40 },
+                  { label: 'מסמכים',         value: (hasInsurance && hasLicense) ? 100 : hasInsurance || hasLicense ? 60 : 20 },
                 ].map(({ label, value }, i) => (
                   <div key={label}>
                     <div className="flex items-center justify-between mb-1.5">
@@ -1222,10 +1272,10 @@ export default function Onboarding() {
 
               <div className="flex flex-wrap gap-2">
                 {[
-                  `${category} specialist`,
-                  experience >= 7 ? '7+ years experience' : experience >= 3 ? '3+ years experience' : 'Growing talent',
-                  teamSize > 5 ? 'Full team' : teamSize > 1 ? 'Small team' : 'Solo artist',
-                  products.length > 0 ? `${products.length} product${products.length > 1 ? 's' : ''} listed` : null,
+                  `מומחה ${category}`,
+                  experience >= 7 ? '7+ שנות ניסיון' : experience >= 3 ? '3+ שנות ניסיון' : 'כישרון מתפתח',
+                  teamSize > 5 ? 'צוות מלא' : teamSize > 1 ? 'צוות קטן' : 'עצמאי',
+                  products.length > 0 ? `${products.length} מוצר${products.length > 1 ? 'ים' : ''} רשום` : null,
                 ].filter(Boolean).map(chip => (
                   <span key={chip} className="px-3 py-1.5 text-xs font-bold text-evo-purple bg-evo-elevated border-[1.5px] border-evo-dim"
                     style={{ borderRadius: 50 }}>✓ {chip}</span>
@@ -1240,20 +1290,20 @@ export default function Onboarding() {
               <div className="flex flex-col items-center text-center pt-4 pb-6">
                 <div className="text-5xl mb-5">🎯</div>
                 <h2 className="text-[24px] font-extrabold text-evo-text mb-2" style={{ letterSpacing: '-0.5px' }}>
-                  Create your supplier<br />account to go live.
+                  צור את חשבון הספק<br />שלך כדי להתחיל.
                 </h2>
-                <p className="text-sm font-semibold text-evo-muted">Your profile is ready — one step left</p>
+                <p className="text-sm font-semibold text-evo-muted">הפרופיל שלך מוכן — עוד שלב אחד</p>
               </div>
 
               <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-5 mb-4">
-                {['Category selected', 'Identity & story', 'Package created', 'Products added', 'Pricing rules set', 'Go live!'].map((label, i) => (
+                {['קטגוריה נבחרה', 'זהות וסיפור', 'חבילה נוצרה', 'מוצרים נוספו', 'כללי תמחור הוגדרו', 'התחל!'].map((label, i) => (
                   <div key={label} className="flex items-center gap-3 py-2.5 border-b border-evo-border last:border-0">
                     <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
                       style={{ background: i < 5 ? '#00C48C' : 'transparent', border: i < 5 ? 'none' : '2px solid #E8E8F0' }}>
                       {i < 5 ? <Check size={12} className="text-white" /> : <div className="w-2 h-2 rounded-full bg-evo-border" />}
                     </div>
                     <p className={`text-sm font-bold flex-1 ${i < 5 ? 'text-evo-text' : 'text-evo-muted'}`}>{label}</p>
-                    {i < 5 && <span className="text-[10px] font-extrabold text-evo-green bg-evo-green/10 px-2 py-0.5 rounded-full">Done</span>}
+                    {i < 5 && <span className="text-[10px] font-extrabold text-evo-green bg-evo-green/10 px-2 py-0.5 rounded-full">בוצע</span>}
                   </div>
                 ))}
               </div>
@@ -1261,7 +1311,7 @@ export default function Onboarding() {
               <div className="flex items-center justify-center gap-2 py-3 px-5 mx-auto w-fit"
                 style={{ borderRadius: 50, background: '#EEF0FF', border: '1.5px solid #C5B8F0' }}>
                 <span className="font-extrabold text-evo-pink">+40%</span>
-                <span className="text-sm font-bold text-evo-purple">more bookings with a verified account</span>
+                <span className="text-sm font-bold text-evo-purple">יותר הזמנות עם חשבון מאומת</span>
               </div>
             </motion.div>
           )}
@@ -1270,12 +1320,12 @@ export default function Onboarding() {
           {step === 10 && (
             <motion.div key="dashboard" {...slide} className="px-6 pb-6">
               <h2 className="text-[24px] font-extrabold text-evo-text mb-1" style={{ letterSpacing: '-0.5px' }}>
-                Welcome, {ownerName || bizName}! 🎉
+                ברוך הבא, {ownerName || bizName}! 🎉
               </h2>
-              <p className="text-sm font-semibold text-evo-muted mb-6">Your EVO supplier profile is live.</p>
+              <p className="text-sm font-semibold text-evo-muted mb-6">פרופיל הספק שלך ב-EVO פעיל.</p>
 
               <div className="grid grid-cols-3 gap-2 mb-4">
-                {[{ label: 'Bookings', value: '0' }, { label: 'Reviews', value: '0' }, { label: 'Profile', value: 'Active' }].map(({ label, value }) => (
+                {[{ label: 'הזמנות', value: '0' }, { label: 'ביקורות', value: '0' }, { label: 'פרופיל', value: 'פעיל' }].map(({ label, value }) => (
                   <div key={label} className="bg-white rounded-[16px] border-[1.5px] border-evo-border p-3 text-center">
                     <p className="text-xl font-extrabold text-evo-purple">{value}</p>
                     <p className="text-xs font-semibold text-evo-muted mt-0.5">{label}</p>
@@ -1288,30 +1338,30 @@ export default function Onboarding() {
                   <span className="text-2xl">{catIcon}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-evo-text truncate">{pkgTypeName || 'Your Package'}</p>
-                    <p className="text-xs text-evo-muted font-medium">{category} · {pkgPriceType === 'per_hour' ? 'Per hour' : pkgPriceType === 'per_guest' ? 'Per guest' : 'Fixed'}</p>
+                    <p className="text-xs text-evo-muted font-medium">{category} · {pkgPriceType === 'per_hour' ? 'לשעה' : pkgPriceType === 'per_guest' ? 'לאורח' : 'קבוע'}</p>
                   </div>
                   <p className="text-lg font-extrabold text-evo-purple shrink-0">
                     {pkgPrice ? `₪${Number(pkgPrice).toLocaleString()}` : '—'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-evo-muted font-medium pt-2 border-t border-evo-border flex-wrap">
-                  <span>👥 {pkgMinGuests}–{pkgMaxGuests} guests</span>
+                  <span>👥 {pkgMinGuests}–{pkgMaxGuests} אורחים</span>
                   <span>·</span>
-                  <span>⏱ min {pkgMinHours}h</span>
-                  {products.length > 0 && <><span>·</span><span>📦 {products.length} product{products.length > 1 ? 's' : ''}</span></>}
-                  {Object.keys(pricingRules).length > 0 && <><span>·</span><span>💸 {Object.keys(pricingRules).length} pricing rules</span></>}
+                  <span>⏱ מינ׳ {pkgMinHours} שע׳</span>
+                  {products.length > 0 && <><span>·</span><span>📦 {products.length} מוצר{products.length > 1 ? 'ים' : ''}</span></>}
+                  {Object.keys(pricingRules).length > 0 && <><span>·</span><span>💸 {Object.keys(pricingRules).length} כללי תמחור</span></>}
                 </div>
               </div>
 
               <div>
-                <p className="text-xs font-bold text-evo-muted mb-2 uppercase tracking-wider">Your profile link</p>
+                <p className="text-xs font-bold text-evo-muted mb-2 uppercase tracking-wider">לינק לפרופיל שלך</p>
                 <div className="flex items-center gap-2 bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3">
                   <span className="text-sm text-evo-accent font-bold flex-1 truncate">
                     evo.co.il/{(bizName || 'your-profile').toLowerCase().replace(/\s+/g, '-')}
                   </span>
                   <button className="text-xs font-extrabold text-evo-purple-mid bg-evo-elevated px-3 py-1.5 rounded-lg"
                     onClick={() => navigator.clipboard?.writeText(`evo.co.il/${(bizName || 'your-profile').toLowerCase().replace(/\s+/g, '-')}`)}>
-                    Copy
+                    העתק
                   </button>
                 </div>
               </div>
@@ -1339,20 +1389,20 @@ export default function Onboarding() {
           </div>
         ) : null}
         <button onClick={next} disabled={saving}
-          className="w-full py-4 text-white text-base font-extrabold transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]"
+          className="w-full py-4 px-6 text-center text-white text-base font-extrabold transition-all disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]"
           style={{
             borderRadius: 14,
             background: '#2D1B8A',
             boxShadow: '0 4px 20px rgba(45,27,105,0.35)',
           }}>
           {saving ? 'שומר...' :
-           step === 5 ? (products.length > 0 ? `Continue with ${products.length} product${products.length > 1 ? 's' : ''}` : 'Skip for now') :
-           step === 6 ? (Object.keys(pricingRules).length > 0 ? 'Save & Continue' : 'Skip for now') :
-           step === 7 ? (hasInsurance !== null || hasLicense !== null ? 'Continue' : 'Skip for now') :
-           step === 8 ? '✦ Activate My Profile' :
-           step === 9 ? 'Sign Up / Sign In' :
-           step === 10 ? 'Go to dashboard →' :
-           'Continue'}
+           step === 5 ? (products.length > 0 ? `המשך עם ${products.length} מוצר${products.length > 1 ? 'ים' : ''}` : 'דלג לעכשיו') :
+           step === 6 ? (Object.keys(pricingRules).length > 0 ? 'שמור והמשך' : 'דלג לעכשיו') :
+           step === 7 ? (hasInsurance !== null || hasLicense !== null ? 'המשך' : 'דלג לעכשיו') :
+           step === 8 ? '✦ הפעל את הפרופיל שלי' :
+           step === 9 ? 'הרשמה / כניסה' :
+           step === 10 ? 'עבור לדשבורד ←' :
+           'המשך'}
         </button>
       </div>
     </div>

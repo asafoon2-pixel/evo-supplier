@@ -4,9 +4,9 @@ import { ArrowLeft, Plus, X, Check } from 'lucide-react'
 import { useSupplier } from '../context/SupplierContext'
 
 const PRICE_TYPES = [
-  { value: 'fixed',     label: 'Fixed price', icon: '📦' },
-  { value: 'per_hour',  label: 'Per hour',    icon: '⏱' },
-  { value: 'per_guest', label: 'Per guest',   icon: '👥' },
+  { value: 'fixed',     label: 'מחיר קבוע', icon: '📦' },
+  { value: 'per_hour',  label: 'לשעה',      icon: '⏱' },
+  { value: 'per_guest', label: 'לאורח',     icon: '👥' },
 ]
 
 const EMPTY_PRODUCT = { name: '', description: '', price: '', price_type: 'fixed', max_guests: '', min_hours: '' }
@@ -29,7 +29,7 @@ export default function ProductsForm() {
 
   const removeProduct = (id) => setProductList(prev => prev.filter(p => p.id !== id))
 
-  const priceLabel = (pt) => pt === 'per_hour' ? '/hr' : pt === 'per_guest' ? '/guest' : 'fixed'
+  const priceLabel = (pt) => pt === 'per_hour' ? '/שעה' : pt === 'per_guest' ? '/אורח' : 'קבוע'
 
   return (
     <div className="flex flex-col min-h-screen bg-evo-bg">
@@ -75,7 +75,7 @@ export default function ProductsForm() {
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   <span className="text-sm font-extrabold text-evo-purple">₪{Number(p.price).toLocaleString()}</span>
                   <span className="text-[10px] font-semibold text-evo-muted bg-evo-elevated px-2 py-0.5 rounded-full">{priceLabel(p.price_type)}</span>
-                  {p.max_guests && <span className="text-[10px] text-evo-muted">max {p.max_guests} guests</span>}
+                  {p.max_guests && <span className="text-[10px] text-evo-muted">עד {p.max_guests} אורחים</span>}
                 </div>
               </div>
               <button onClick={() => removeProduct(p.id)}
@@ -112,7 +112,7 @@ export default function ProductsForm() {
               <div>
                 <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">שם המוצר</label>
                 <input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                  placeholder="e.g. Extra subwoofer, DJ table, Photo album"
+                  placeholder="לדוגמה: סאב נוסף, שולחן DJ, אלבום תמונות"
                   className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors" />
               </div>
 

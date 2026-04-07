@@ -174,8 +174,48 @@ function EditSheet({ pkg, onClose }) {
   )
 }
 
+function ProductCard({ product, onDelete }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-4"
+      style={{ boxShadow: 'rgba(45,27,105,0.08) 0px 2px 12px' }}
+    >
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <p className="text-evo-text text-sm font-bold leading-tight flex-1">{product.name}</p>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {!product.is_available && (
+            <span className="text-[10px] font-bold bg-evo-muted/10 text-evo-muted px-2 py-0.5 rounded-full border border-evo-border">
+              לא זמין
+            </span>
+          )}
+          <button onClick={() => onDelete(product.id)}
+            className="w-7 h-7 rounded-full border-[1.5px] border-evo-border text-evo-muted flex items-center justify-center hover:border-red-300 hover:text-red-400 transition-all">
+            <Trash2 size={11} />
+          </button>
+        </div>
+      </div>
+      {product.description && (
+        <p className="text-evo-muted text-xs leading-relaxed mb-2 line-clamp-2">{product.description}</p>
+      )}
+      <div className="flex items-center gap-2 flex-wrap">
+        <p className="text-evo-purple text-base font-extrabold">
+          ₪{(product.price || 0).toLocaleString()}
+        </p>
+        <span className="text-[11px] font-semibold text-evo-muted bg-evo-elevated px-2 py-0.5 rounded-full">
+          {PRICE_TYPE_LABEL[product.price_type] || product.price_type}
+        </span>
+        {product.category && (
+          <span className="text-[11px] text-evo-muted">{product.category}</span>
+        )}
+      </div>
+    </motion.div>
+  )
+}
+
 export default function Catalog() {
-  const { navigate, setEditPackage, packages, deletePackage, vendorData } = useSupplier()
+  const { navigate, setEditPackage, packages, products, deletePackage, deleteProduct, vendorData } = useSupplier()
   const [editPkg, setEditPkg]           = useState(null)
   const [deletingId, setDeletingId]     = useState(null)
   const [deleteError, setDeleteError]   = useState('')
@@ -257,12 +297,37 @@ export default function Catalog() {
         )}
       </div>
 
-      {/* Add package */}
-      <div className="px-6 mt-5">
+      {/* Products section */}
+      <div className="px-6 mt-8">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-black uppercase tracking-wider text-evo-muted">מוצרים בודדים</p>
+          <span className="text-xs font-bold text-evo-accent">{products.length}</span>
+        </div>
+        {products.length === 0 ? (
+          <div className="text-center py-8 bg-white rounded-[20px] border-[1.5px] border-evo-border"
+            style={{ boxShadow: 'rgba(45,27,105,0.06) 0px 2px 8px' }}>
+            <p className="text-evo-muted text-xs">אין מוצרים בודדים עדיין</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {products.map(product => (
+              <ProductCard key={product.id} product={product} onDelete={deleteProduct} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add package / Add product */}
+      <div className="px-6 mt-5 space-y-3">
         <button onClick={() => { setEditPackage(null); navigate('packageForm') }}
           className="w-full py-4 rounded-[20px] border-[1.5px] border-dashed border-evo-border flex items-center justify-center gap-3 hover:border-evo-purple-mid transition-all group">
           <Plus size={16} className="text-evo-muted group-hover:text-evo-purple transition-colors" />
           <span className="text-evo-muted text-sm font-medium group-hover:text-evo-purple transition-colors">הוסף חבילה חדשה</span>
+        </button>
+        <button onClick={() => { setEditPackage(null); navigate('productsForm') }}
+          className="w-full py-4 rounded-[20px] border-[1.5px] border-dashed border-evo-border flex items-center justify-center gap-3 hover:border-evo-purple-mid transition-all group">
+          <Plus size={16} className="text-evo-muted group-hover:text-evo-purple transition-colors" />
+          <span className="text-evo-muted text-sm font-medium group-hover:text-evo-purple transition-colors">הוסף מוצר בודד</span>
         </button>
       </div>
 
@@ -270,7 +335,7 @@ export default function Catalog() {
       <div className="px-6 mt-5">
         <div className="bg-white rounded-[20px] border-l-[3px] border-evo-accent border-[1.5px] border-evo-border p-4"
           style={{ boxShadow: 'rgba(45,27,105,0.08) 0px 2px 12px' }}>
-          <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-accent mb-2">EVO Matching</p>
+          <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-accent mb-2">התאמת EVO</p>
           <p className="text-evo-muted text-xs leading-relaxed">
             החבילות שלך משמשות את EVO להתאמה ותמחור השירותים שלך. שמור אותן מדויקות לאיכות התאמה טובה יותר.
           </p>

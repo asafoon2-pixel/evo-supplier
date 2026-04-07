@@ -3,12 +3,12 @@ import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { useSupplier } from '../context/SupplierContext'
 
-const DAYS   = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
-const MONTHS = ['January','February','March','April','May','June',
-                'July','August','September','October','November','December']
+const DAYS   = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
+const MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני',
+                'יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
-const SCOPES    = 'https://www.googleapis.com/auth/calendar.readonly'
+const SCOPES    = 'https://www.googleapis.com/auth/calendar.events'
 
 const bookedDates = [
   { year: 2026, month: 3, day: 12 },
@@ -19,10 +19,6 @@ function getDaysInMonth(y, m) { return new Date(y, m + 1, 0).getDate() }
 function getFirstDay(y, m)    { return new Date(y, m, 1).getDay() }
 function sameDate(a, b)       { return a.year === b.year && a.month === b.month && a.day === b.day }
 
-function parseGoogleDate(d) {
-  const s = d?.dateTime || d?.date || ''
-  return s ? new Date(s) : null
-}
 
 export default function CalendarScreen() {
   const { events } = useSupplier()
@@ -38,7 +34,7 @@ export default function CalendarScreen() {
   // Google Calendar state
   const [gConnected,   setGConnected]   = useState(false)
   const [gLoading,     setGLoading]     = useState(false)
-  const [gEvents,      setGEvents]      = useState([])
+  const [syncedCount,  setSyncedCount]  = useState(0)
   const [accessToken,  setAccessToken]  = useState(null)
   const [gError,       setGError]       = useState(null)
   const [scriptReady,  setScriptReady]  = useState(false)
@@ -56,50 +52,76 @@ export default function CalendarScreen() {
     return () => { if (document.head.contains(s)) document.head.removeChild(s) }
   }, [])
 
-  const fetchGoogleEvents = useCallback(async (token) => {
+  const syncToGoogle = useCallback(async (token) => {
     setGLoading(true)
     setGError(null)
+    const eventsToSync = events.filter(e => e.status !== 'completed')
+    let count = 0
     try {
-      const now     = new Date().toISOString()
-      const maxTime = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString()
-      const res = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${now}&timeMax=${maxTime}&singleEvents=true&orderBy=startTime&maxResults=30`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      )
-      if (!res.ok) throw new Error('Calendar API error')
-      const data = await res.json()
-      setGEvents(data.items || [])
+      for (const evt of eventsToSync) {
+        // Parse date string to a Date object — fallback to today if unparseable
+        const dateObj = evt.date ? new Date(evt.date) : new Date()
+        const isValid = !isNaN(dateObj.getTime())
+        const dateStr = isValid
+          ? dateObj.toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0]
+        const nextDay = new Date(isValid ? dateObj : new Date())
+        nextDay.setDate(nextDay.getDate() + 1)
+        const nextDayStr = nextDay.toISOString().split('T')[0]
+
+        const body = {
+          summary: `EVO — ${evt.name || evt.eventType || 'אירוע'}`,
+          description: `${evt.eventType || ''} · ${evt.guestCount || ''} אורחים · ₪${evt.totalValue?.toLocaleString() || ''}`.trim(),
+          start: { date: dateStr },
+          end:   { date: nextDayStr },
+          colorId: '7', // peacock
+        }
+
+        const res = await fetch(
+          'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+          }
+        )
+        if (res.ok) count++
+      }
+      setSyncedCount(count)
       setGConnected(true)
     } catch (err) {
-      setGError('Could not load Google Calendar events')
+      setGError('שגיאה בסנכרון — נסה שנית')
     } finally {
       setGLoading(false)
     }
-  }, [])
+  }, [events])
 
   const connectGoogle = () => {
     if (!scriptReady || !window.google?.accounts) {
-      setGError('Google services not ready — try again')
+      setGError('שירותי Google לא מוכנים — נסה שנית')
       return
     }
     if (!CLIENT_ID) {
-      setGError('Google Client ID not configured (set VITE_GOOGLE_CLIENT_ID)')
+      setGError('Google Client ID לא מוגדר (הגדר VITE_GOOGLE_CLIENT_ID)')
       return
     }
     const tokenClient = window.google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
       callback: (resp) => {
-        if (resp.error) { setGError('Authorization failed: ' + resp.error); return }
+        if (resp.error) { setGError('הרשאה נכשלה: ' + resp.error); return }
         setAccessToken(resp.access_token)
-        fetchGoogleEvents(resp.access_token)
+        syncToGoogle(resp.access_token)
       },
     })
     tokenClient.requestAccessToken()
   }
 
   const refreshGoogle = () => {
-    if (accessToken) fetchGoogleEvents(accessToken)
+    if (accessToken) syncToGoogle(accessToken)
     else connectGoogle()
   }
 
@@ -108,17 +130,9 @@ export default function CalendarScreen() {
       window.google.accounts.oauth2.revoke(accessToken)
     }
     setGConnected(false)
-    setGEvents([])
+    setSyncedCount(0)
     setAccessToken(null)
   }
-
-  // Build Google event markers per day
-  const gEventDays = new Set(
-    gEvents
-      .map(e => parseGoogleDate(e.start))
-      .filter(Boolean)
-      .map(d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`)
-  )
 
   const prevMonth = () => viewMonth === 0 ? (setViewMonth(11), setViewYear(y => y - 1)) : setViewMonth(m => m - 1)
   const nextMonth = () => viewMonth === 11 ? (setViewMonth(0),  setViewYear(y => y + 1)) : setViewMonth(m => m + 1)
@@ -136,12 +150,6 @@ export default function CalendarScreen() {
 
   const upcomingEvo = events.filter(e => e.status !== 'completed')
 
-  // Google events in this month's view
-  const gEventsThisMonth = gEvents.filter(e => {
-    const d = parseGoogleDate(e.start)
-    return d && d.getFullYear() === viewYear && d.getMonth() === viewMonth
-  })
-
   return (
     <div className="w-full bg-evo-bg pb-8">
 
@@ -150,8 +158,8 @@ export default function CalendarScreen() {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-bold tracking-[0.25em] uppercase text-evo-accent mb-1">EVO</p>
-            <h1 className="text-[22px] font-extrabold text-evo-text" style={{ letterSpacing: '-0.5px' }}>Calendar</h1>
-            <p className="text-evo-muted text-sm mt-1 font-medium">Manage availability & sync Google Calendar</p>
+            <h1 className="text-[22px] font-extrabold text-evo-text" style={{ letterSpacing: '-0.5px' }}>לוח שנה</h1>
+            <p className="text-evo-muted text-sm mt-1 font-medium">נהל זמינות וסנכרן יומן Google</p>
           </div>
           {gConnected && (
             <div className="flex items-center gap-2">
@@ -178,12 +186,16 @@ export default function CalendarScreen() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-extrabold text-evo-text">Connect Google Calendar</p>
-                <p className="text-xs text-evo-muted font-medium mt-0.5">Sync your schedule — no double bookings</p>
+                <p className="text-sm font-extrabold text-evo-text">חבר יומן Google</p>
+                <p className="text-xs text-evo-muted font-medium mt-0.5">סנכרן את הלו"ז — ללא כפילויות</p>
               </div>
             </div>
             <div className="space-y-2 mb-4">
-              {['See all your events in one view', 'EVO avoids leads on busy days', 'Read-only — we never change your calendar'].map(txt => (
+              {[
+                'אירועי EVO יופיעו ביומן Google שלך',
+                'לא תפספס אף אירוע — הכל במקום אחד',
+                'מתעדכן אוטומטי עם כל סנכרון',
+              ].map(txt => (
                 <div key={txt} className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-evo-green/15 flex items-center justify-center shrink-0">
                     <span className="text-evo-green text-[10px] font-extrabold">✓</span>
@@ -198,9 +210,9 @@ export default function CalendarScreen() {
               </div>
             )}
             <button onClick={connectGoogle} disabled={gLoading}
-              className="w-full py-3 text-white text-sm font-extrabold rounded-[14px] transition-all active:scale-[0.98] disabled:opacity-50"
+              className="w-full py-3 px-6 text-center text-white text-sm font-extrabold rounded-[14px] transition-all active:scale-[0.98] disabled:opacity-50"
               style={{ background: '#2D1B8A', boxShadow: '0 4px 20px rgba(45,27,105,0.35)' }}>
-              {gLoading ? 'Connecting…' : 'Connect Google Calendar'}
+              {gLoading ? 'מסנכרן...' : 'סנכרן אירועים ליומן Google'}
             </button>
           </div>
         </div>
@@ -212,10 +224,10 @@ export default function CalendarScreen() {
           <div className="flex items-center justify-between bg-evo-green/10 border-[1.5px] border-evo-green/30 rounded-[16px] px-4 py-3">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-evo-green animate-pulse" />
-              <p className="text-sm font-bold text-evo-green">Google Calendar synced</p>
-              <span className="text-xs text-evo-muted font-medium">· {gEvents.length} events</span>
+              <p className="text-sm font-bold text-evo-green">יומן Google מסונכרן</p>
+              <span className="text-xs text-evo-muted font-medium">· {syncedCount} אירועים נוספו</span>
             </div>
-            <button onClick={disconnect} className="text-xs font-bold text-evo-muted underline">Disconnect</button>
+            <button onClick={disconnect} className="text-xs font-bold text-evo-muted underline">נתק</button>
           </div>
         </div>
       )}
@@ -248,8 +260,6 @@ export default function CalendarScreen() {
               const isBooked  = bookedDates.some(b => sameDate(b, d))
               const isBlocked = blocked.some(b => sameDate(b, d))
               const isPast    = new Date(viewYear, viewMonth, day) < new Date(today.getFullYear(), today.getMonth(), today.getDate())
-              const hasGoogle = gConnected && gEventDays.has(`${viewYear}-${viewMonth}-${day}`)
-
               return (
                 <button key={day} onClick={() => !isPast && toggleBlock(day)} disabled={isPast}
                   className={`aspect-square rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all relative
@@ -261,9 +271,6 @@ export default function CalendarScreen() {
                   `}
                 >
                   {day}
-                  {hasGoogle && !isBooked && !isBlocked && (
-                    <div className="w-1 h-1 rounded-full bg-blue-500 absolute bottom-1" />
-                  )}
                 </button>
               )
             })}
@@ -273,60 +280,23 @@ export default function CalendarScreen() {
           <div className="flex items-center gap-3 mt-4 pt-4 border-t border-evo-border flex-wrap">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm bg-evo-accent/20 border-[1.5px] border-evo-dim" />
-              <p className="text-evo-muted text-xs font-medium">EVO Booked</p>
+              <p className="text-evo-muted text-xs font-medium">EVO הזמין</p>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm bg-evo-elevated border-[1.5px] border-evo-border" />
-              <p className="text-evo-muted text-xs font-medium">Blocked</p>
+              <p className="text-evo-muted text-xs font-medium">חסום</p>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm border-[1.5px] border-evo-purple-mid" />
-              <p className="text-evo-muted text-xs font-medium">Today</p>
+              <p className="text-evo-muted text-xs font-medium">היום</p>
             </div>
-            {gConnected && (
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                <p className="text-evo-muted text-xs font-medium">Google event</p>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Google events this month */}
-      {gConnected && gEventsThisMonth.length > 0 && (
-        <div className="px-6 mb-5">
-          <p className="text-xs font-bold tracking-[0.25em] uppercase text-evo-muted mb-3">
-            Google Calendar — {MONTHS[viewMonth]}
-          </p>
-          <div className="space-y-2">
-            {gEventsThisMonth.map(evt => {
-              const start = parseGoogleDate(evt.start)
-              return (
-                <motion.div key={evt.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                  className="bg-white rounded-[16px] border-[1.5px] border-evo-border p-3.5 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #4285F4, #34A853)' }}>
-                    <span className="text-white text-[10px] font-extrabold">
-                      {start ? start.getDate() : '?'}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-evo-text text-sm font-bold truncate">{evt.summary || 'Untitled event'}</p>
-                    <p className="text-evo-muted text-xs font-medium mt-0.5">
-                      {start ? start.toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
-                    </p>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
       {/* EVO booked events */}
       <div className="px-6">
-        <p className="text-xs font-bold tracking-[0.25em] uppercase text-evo-muted mb-3">EVO Booked Dates</p>
+        <p className="text-xs font-bold tracking-[0.25em] uppercase text-evo-muted mb-3">תאריכים שEVO הזמין</p>
         {upcomingEvo.length === 0 && (
           <p className="text-evo-muted text-xs font-medium py-2">אין אירועים מתוזמנים עדיין</p>
         )}
@@ -345,7 +315,7 @@ export default function CalendarScreen() {
               <div className="text-right shrink-0">
                 <div className="flex items-center gap-1.5 justify-end">
                   <div className="w-1.5 h-1.5 rounded-full bg-evo-accent" />
-                  <p className="text-evo-accent text-xs font-bold">{event.daysAway}d away</p>
+                  <p className="text-evo-accent text-xs font-bold">בעוד {event.daysAway} ימים</p>
                 </div>
                 <p className="text-evo-muted text-xs mt-0.5 font-medium">{event.eventType}</p>
               </div>
@@ -357,9 +327,9 @@ export default function CalendarScreen() {
       {/* EVO note */}
       <div className="px-6 mt-5">
         <div className="bg-white rounded-[20px] border-l-[3px] border-evo-accent border-[1.5px] border-evo-border p-4">
-          <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-accent mb-2">EVO Matching</p>
+          <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-accent mb-2">התאמת EVO</p>
           <p className="text-evo-muted text-xs leading-relaxed font-medium">
-            Keep your calendar updated. EVO only sends leads for dates you're available — blocking dates ensures better match quality.
+            שמור על הלוח מעודכן. EVO שולח לידים רק בתאריכים שאתה פנוי — חסימת תאריכים משפרת את איכות ההתאמה.
           </p>
         </div>
       </div>

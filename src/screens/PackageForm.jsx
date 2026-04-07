@@ -4,104 +4,104 @@ import { ArrowLeft, Check, Zap, Plus, Minus, X, Image } from 'lucide-react'
 import { useSupplier } from '../context/SupplierContext'
 
 const PRICE_TYPES = [
-  { value: 'fixed',     label: 'Fixed price',  icon: '📦', desc: 'One total price' },
-  { value: 'per_hour',  label: 'Per hour',     icon: '⏱',  desc: 'Hourly rate' },
-  { value: 'per_guest', label: 'Per guest',    icon: '👥', desc: 'Per head' },
+  { value: 'fixed',     label: 'מחיר קבוע', icon: '📦', desc: 'מחיר כולל' },
+  { value: 'per_hour',  label: 'לשעה',      icon: '⏱',  desc: 'תעריף שעתי' },
+  { value: 'per_guest', label: 'לאורח',     icon: '👥', desc: 'לאדם' },
 ]
 
 const PKG_BADGES = [
-  { value: 'most_popular',    label: '⭐ Most Popular' },
-  { value: 'best_value',      label: '💰 Best Value' },
-  { value: 'evo_recommended', label: '✦ EVO Recommended' },
+  { value: 'most_popular',    label: '⭐ הכי פופולרי' },
+  { value: 'best_value',      label: '💰 הכי משתלם' },
+  { value: 'evo_recommended', label: '✦ מומלץ EVO' },
 ]
 
 const PACKAGE_TEMPLATES = {
   Sound: {
-    types: ['Small Event (up to 150 guests)', 'Medium Event (150–300 guests)', 'Large Event (300–600 guests)', 'Premium / Festival (600+)'],
+    types: ['אירוע קטן (עד 150 אורחים)', 'אירוע בינוני (150–300)', 'אירוע גדול (300–600)', 'פרמיום / פסטיבל (600+)'],
     fields: [
-      { key: 'speakers',      label: 'Speakers',               type: 'text',   ph: 'e.g. 2× JBL SRX815' },
-      { key: 'subwoofers',    label: 'Subwoofers',             type: 'text',   ph: 'e.g. 1× JBL SRX818', optional: true },
-      { key: 'mixer',         label: 'Mixer / Console',        type: 'text',   ph: 'e.g. Pioneer DJM-900' },
-      { key: 'microphones',   label: 'Microphones',            type: 'number', ph: '2' },
-      { key: 'dj_connection', label: 'DJ Connection included', type: 'toggle' },
-      { key: 'technician',    label: 'Technician',             type: 'select', options: ['None', 'Setup only', 'Full event'] },
+      { key: 'speakers',      label: 'רמקולים',               type: 'text',   ph: 'לדוגמה: 2× JBL SRX815' },
+      { key: 'subwoofers',    label: 'סאבוופרים',             type: 'text',   ph: 'לדוגמה: 1× JBL SRX818', optional: true },
+      { key: 'mixer',         label: 'מיקסר / קונסולה',       type: 'text',   ph: 'לדוגמה: Pioneer DJM-900' },
+      { key: 'microphones',   label: 'מיקרופונים',            type: 'number', ph: '2' },
+      { key: 'dj_connection', label: 'חיבור DJ כלול',         type: 'toggle' },
+      { key: 'technician',    label: 'טכנאי',                  type: 'select', options: ['ללא', 'הקמה בלבד', 'לאורך כל האירוע'] },
     ],
   },
   Lighting: {
-    types: ['Basic Lighting', 'Party Lighting', 'Club Setup', 'Premium Production'],
+    types: ['תאורה בסיסית', 'תאורת מסיבה', 'הגדרת קלאב', 'פרודקשן פרמיום'],
     fields: [
-      { key: 'par_lights',   label: 'PAR Lights',        type: 'number', ph: '8' },
-      { key: 'moving_heads', label: 'Moving Heads',      type: 'number', ph: '4' },
-      { key: 'led_strips',   label: 'LED Strips',        type: 'text',   ph: 'e.g. 10m RGB strips', optional: true },
-      { key: 'fog_machine',  label: 'Fog Machine',       type: 'toggle' },
-      { key: 'laser',        label: 'Laser Show',        type: 'toggle', optional: true },
-      { key: 'operator',     label: 'Lighting Operator', type: 'select', options: ['None', 'Setup only', 'Full event'] },
+      { key: 'par_lights',   label: 'פנסי PAR',         type: 'number', ph: '8' },
+      { key: 'moving_heads', label: 'ראשים נעים',        type: 'number', ph: '4' },
+      { key: 'led_strips',   label: 'רצועות LED',        type: 'text',   ph: 'לדוגמה: 10 מטר RGB', optional: true },
+      { key: 'fog_machine',  label: 'מכונת עשן',         type: 'toggle' },
+      { key: 'laser',        label: 'תצוגת לייזר',       type: 'toggle', optional: true },
+      { key: 'operator',     label: 'מפעיל תאורה',       type: 'select', options: ['ללא', 'הקמה בלבד', 'לאורך כל האירוע'] },
     ],
   },
   Decor: {
-    types: ['Basic Setup', 'Styled Event', 'Premium Design', 'Instagram Experience'],
+    types: ['הגדרה בסיסית', 'אירוע מעוצב', 'עיצוב פרמיום', 'חוויית אינסטגרם'],
     fields: [
-      { key: 'floral',       label: 'Floral Arrangements',     type: 'text',   ph: 'e.g. 10 table centerpieces' },
-      { key: 'centerpieces', label: 'Centerpieces',            type: 'number', ph: '10' },
-      { key: 'backdrop',     label: 'Backdrop included',       type: 'toggle' },
-      { key: 'color_scheme', label: 'Signature Color Scheme',  type: 'text',   ph: 'e.g. White & gold' },
-      { key: 'props',        label: 'Props & Accessories',     type: 'text',   ph: 'e.g. Candles, lanterns', optional: true },
-      { key: 'setup_crew',   label: 'Setup Crew (people)',     type: 'number', ph: '2' },
+      { key: 'floral',       label: 'סידורי פרחים',      type: 'text',   ph: 'לדוגמה: 10 סידורי שולחן' },
+      { key: 'centerpieces', label: 'סנטרפיסים',          type: 'number', ph: '10' },
+      { key: 'backdrop',     label: 'רקע / ווייב',        type: 'toggle' },
+      { key: 'color_scheme', label: 'פלטת צבעים',         type: 'text',   ph: 'לדוגמה: לבן וזהב' },
+      { key: 'props',        label: 'אביזרים',             type: 'text',   ph: 'לדוגמה: נרות, פנסים', optional: true },
+      { key: 'setup_crew',   label: 'צוות הקמה (אנשים)',  type: 'number', ph: '2' },
     ],
   },
   Bar: {
-    types: ['Basic Bar', 'Classic Bar', 'Premium Bar', 'Open Bar Luxury'],
+    types: ['בר בסיסי', 'בר קלאסי', 'בר פרמיום', 'פתוח — לוקסוס'],
     fields: [
-      { key: 'bartenders',       label: 'Bartenders',                  type: 'number', ph: '2' },
-      { key: 'bar_equipment',    label: 'Bar Equipment',               type: 'text',   ph: 'e.g. Full mobile bar, ice machine' },
-      { key: 'alcohol_included', label: 'Alcohol included in price',   type: 'toggle' },
-      { key: 'cocktail_menu',    label: 'Cocktail Menu',               type: 'text',   ph: 'e.g. 8 signature cocktails' },
-      { key: 'non_alcoholic',    label: 'Non-alcoholic options',       type: 'toggle' },
-      { key: 'hours_service',    label: 'Hours of Service',            type: 'number', ph: '5' },
+      { key: 'bartenders',       label: 'ברמנים',                 type: 'number', ph: '2' },
+      { key: 'bar_equipment',    label: 'ציוד בר',                type: 'text',   ph: 'לדוגמה: בר נייד, מכונת קרח' },
+      { key: 'alcohol_included', label: 'אלכוהול כלול במחיר',    type: 'toggle' },
+      { key: 'cocktail_menu',    label: 'תפריט קוקטיילים',        type: 'text',   ph: 'לדוגמה: 8 קוקטיילים מיוחדים' },
+      { key: 'non_alcoholic',    label: 'אפשרויות ללא אלכוהול',  type: 'toggle' },
+      { key: 'hours_service',    label: 'שעות שירות',             type: 'number', ph: '5' },
     ],
   },
   Photography: {
-    types: ['Basic Coverage', 'Standard Event', 'Premium Coverage', 'Full Production'],
+    types: ['כיסוי בסיסי', 'אירוע סטנדרטי', 'כיסוי פרמיום', 'פרודקשן מלא'],
     fields: [
-      { key: 'photographers',  label: 'Photographers',             type: 'number', ph: '1' },
-      { key: 'videographers',  label: 'Videographers',             type: 'number', ph: '1', optional: true },
-      { key: 'hours_coverage', label: 'Hours of Coverage',         type: 'number', ph: '6' },
-      { key: 'editing_days',   label: 'Editing & Delivery (days)', type: 'number', ph: '14' },
-      { key: 'drone',          label: 'Drone footage',             type: 'toggle', optional: true },
-      { key: 'photo_booth',    label: 'Photo booth',               type: 'toggle', optional: true },
+      { key: 'photographers',  label: 'צלמים',                   type: 'number', ph: '1' },
+      { key: 'videographers',  label: 'צלמי וידאו',              type: 'number', ph: '1', optional: true },
+      { key: 'hours_coverage', label: 'שעות צילום',              type: 'number', ph: '6' },
+      { key: 'editing_days',   label: 'עריכה ומסירה (ימים)',     type: 'number', ph: '14' },
+      { key: 'drone',          label: 'צילום רחפן',              type: 'toggle', optional: true },
+      { key: 'photo_booth',    label: 'פוטו בות',                type: 'toggle', optional: true },
     ],
   },
   Entertainment: {
-    types: ['Basic Performer', 'Pro Performer', 'Headliner', 'Full Experience'],
+    types: ['מבצע בסיסי', 'מבצע מקצועי', 'הדלייט', 'חוויה מלאה'],
     fields: [
-      { key: 'performers',       label: 'Number of Performers',  type: 'number', ph: '1' },
-      { key: 'performance_type', label: 'Type of Performance',   type: 'text',   ph: 'e.g. DJ set, Live band, MC' },
-      { key: 'set_duration',     label: 'Set Duration (hours)',  type: 'number', ph: '3' },
-      { key: 'equipment',        label: 'Equipment included',    type: 'toggle' },
-      { key: 'sound_system',     label: 'Sound system included', type: 'toggle', optional: true },
-      { key: 'lighting_show',    label: 'Lighting show',         type: 'toggle', optional: true },
+      { key: 'performers',       label: 'מספר מבצעים',       type: 'number', ph: '1' },
+      { key: 'performance_type', label: 'סוג הופעה',          type: 'text',   ph: 'לדוגמה: DJ, להקה חיה, MC' },
+      { key: 'set_duration',     label: 'משך סט (שעות)',      type: 'number', ph: '3' },
+      { key: 'equipment',        label: 'ציוד כלול',           type: 'toggle' },
+      { key: 'sound_system',     label: 'מערכת שמע כלולה',    type: 'toggle', optional: true },
+      { key: 'lighting_show',    label: 'תצוגת תאורה',        type: 'toggle', optional: true },
     ],
   },
   Catering: {
-    types: ['Finger Food', 'Buffet', 'Premium Catering', 'Live Stations'],
+    types: ['פינגרפוד', 'בופה', 'קייטרינג פרמיום', 'תחנות חי'],
     fields: [
-      { key: 'dishes_count', label: 'Number of Dishes',          type: 'number', ph: '12' },
-      { key: 'waitstaff',    label: 'Waitstaff Included',        type: 'number', ph: '3' },
-      { key: 'dietary',      label: 'Dietary Options',           type: 'text',   ph: 'e.g. Vegan, Gluten-free' },
-      { key: 'setup',        label: 'Setup & service included',  type: 'toggle' },
-      { key: 'cleanup',      label: 'Cleanup included',          type: 'toggle' },
-      { key: 'kosher',       label: 'Kosher certified',          type: 'toggle' },
+      { key: 'dishes_count', label: 'מספר מנות',          type: 'number', ph: '12' },
+      { key: 'waitstaff',    label: 'מלצרים',              type: 'number', ph: '3' },
+      { key: 'dietary',      label: 'אפשרויות תזונה',     type: 'text',   ph: 'לדוגמה: טבעוני, ללא גלוטן' },
+      { key: 'setup',        label: 'הקמה ושירות כלולים', type: 'toggle' },
+      { key: 'cleanup',      label: 'פינוי כלול',          type: 'toggle' },
+      { key: 'kosher',       label: 'כשר מוסמך',           type: 'toggle' },
     ],
   },
   Transport: {
-    types: ['Basic Shuttle', 'Group Transport', 'VIP Transport'],
+    types: ['הסעה בסיסית', 'הסעת קבוצה', 'VIP הסעת'],
     fields: [
-      { key: 'vehicles',     label: 'Number of Vehicles',    type: 'number', ph: '1' },
-      { key: 'vehicle_type', label: 'Vehicle Type',          type: 'text',   ph: 'e.g. Minibus, Limousine, Van' },
-      { key: 'capacity',     label: 'Capacity per Vehicle',  type: 'number', ph: '20' },
-      { key: 'driver',       label: 'Driver included',       type: 'toggle' },
-      { key: 'hours',        label: 'Hours of Service',      type: 'number', ph: '4' },
-      { key: 'routes',       label: 'Routes / Area covered', type: 'text',   ph: 'e.g. Tel Aviv area', optional: true },
+      { key: 'vehicles',     label: 'מספר כלי רכב',      type: 'number', ph: '1' },
+      { key: 'vehicle_type', label: 'סוג רכב',            type: 'text',   ph: 'לדוגמה: מיניבוס, לימוזינה, ון' },
+      { key: 'capacity',     label: 'קיבולת לכלי רכב',   type: 'number', ph: '20' },
+      { key: 'driver',       label: 'נהג כלול',           type: 'toggle' },
+      { key: 'hours',        label: 'שעות שירות',         type: 'number', ph: '4' },
+      { key: 'routes',       label: 'מסלולים / אזור',    type: 'text',   ph: 'לדוגמה: אזור תל אביב', optional: true },
     ],
   },
 }
@@ -139,8 +139,8 @@ function PhotoUpload({ value, onChange }) {
   }
   return (
     <div>
-      <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">Package photo</label>
-      <p className="text-xs text-evo-muted font-medium mb-2">Show clients what they're getting — a great photo drives bookings</p>
+      <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">תמונת חבילה</label>
+      <p className="text-xs text-evo-muted font-medium mb-2">הראה ללקוחות מה הם מקבלים — תמונה טובה מגדילה הזמנות</p>
       <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile} />
       {value ? (
         <div className="relative h-32 rounded-[16px] overflow-hidden border-[1.5px] border-evo-purple-mid">
@@ -154,7 +154,7 @@ function PhotoUpload({ value, onChange }) {
         <button onClick={() => ref.current?.click()}
           className="w-full h-32 flex flex-col items-center justify-center gap-2 border-[1.5px] border-dashed border-evo-dim rounded-[16px] bg-evo-elevated hover:border-evo-purple-mid transition-all">
           <Image size={22} className="text-evo-muted" />
-          <span className="text-xs font-bold text-evo-muted">Add package photo</span>
+          <span className="text-xs font-bold text-evo-muted">הוסף תמונה לחבילה</span>
         </button>
       )}
     </div>
@@ -168,7 +168,7 @@ function TemplateField({ field, value, onChange }) {
       <div className="flex items-center justify-between bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3">
         <div>
           <p className="text-sm font-bold text-evo-text">{field.label}</p>
-          {field.optional && <p className="text-[10px] text-evo-muted font-medium">Optional</p>}
+          {field.optional && <p className="text-[10px] text-evo-muted font-medium">אופציונלי</p>}
         </div>
         <button onClick={() => onChange(!on)}
           className={`w-11 h-6 rounded-full transition-all ${on ? 'bg-evo-purple-mid' : 'bg-evo-border'}`}>
@@ -181,7 +181,7 @@ function TemplateField({ field, value, onChange }) {
     return (
       <div>
         <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
-          {field.label}{field.optional && <span className="ml-1 normal-case text-[10px]">· Optional</span>}
+          {field.label}{field.optional && <span className="ml-1 normal-case text-[10px]">· אופ.</span>}
         </label>
         <div className="flex flex-wrap gap-2">
           {field.options.map(opt => (
@@ -258,21 +258,21 @@ export default function PackageForm() {
               <ArrowLeft size={18} className="text-evo-text" />
             </button>
             <div>
-              <h1 className="text-[18px] font-extrabold text-evo-text">{isEdit ? 'Edit Package' : 'New Package'}</h1>
+              <h1 className="text-[18px] font-extrabold text-evo-text">{isEdit ? 'עריכת חבילה' : 'חבילה חדשה'}</h1>
               {isEdit && <p className="text-xs font-semibold text-evo-muted">{editPackage.name}</p>}
             </div>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-5 space-y-3">
           <p className="text-sm font-semibold text-evo-muted mb-1">
-            {isEdit ? 'Select category to load template fields' : 'What category is this package for?'}
+            {isEdit ? 'בחר קטגוריה לטעינת שדות' : 'מה הקטגוריה של החבילה?'}
           </p>
           {isEdit && (
-            <p className="text-xs text-evo-muted mb-4">Your existing data (name, price, description, photo) is already loaded.</p>
+            <p className="text-xs text-evo-muted mb-4">הנתונים הקיימים (שם, מחיר, תיאור, תמונה) כבר נטענו.</p>
           )}
           {ALL_CATEGORIES.map(cat => (
             <button key={cat} onClick={() => setSelectedCategory(cat)}
-              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-[16px] border-[1.5px] border-evo-border bg-white text-left hover:border-evo-purple-mid transition-all">
+              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-[16px] border-[1.5px] border-evo-border bg-white text-start hover:border-evo-purple-mid transition-all">
               <span className="text-sm font-bold text-evo-text">{cat}</span>
             </button>
           ))}
@@ -292,7 +292,7 @@ export default function PackageForm() {
           </button>
           <div className="flex-1">
             <h1 className="text-[18px] font-extrabold text-evo-text leading-tight">
-              {isEdit ? 'Edit Package' : 'New Package'}
+              {isEdit ? 'עריכת חבילה' : 'חבילה חדשה'}
             </h1>
             <p className="text-xs font-semibold text-evo-muted">{selectedCategory}</p>
           </div>
@@ -306,7 +306,7 @@ export default function PackageForm() {
           {/* Tip */}
           <div className="flex items-center gap-2 px-3 py-2 rounded-[12px]" style={{ background: '#EEF0FF', border: '1.5px solid #C5B8F0' }}>
             <Zap size={13} className="text-evo-accent shrink-0" />
-            <p className="text-xs font-bold text-evo-purple">Suppliers with packages get 3× more bookings</p>
+            <p className="text-xs font-bold text-evo-purple">ספקים עם חבילות מקבלים 3× יותר הזמנות</p>
           </div>
 
           {/* Package image */}
@@ -315,11 +315,11 @@ export default function PackageForm() {
           {/* Package type */}
           {tpl && (
             <div>
-              <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">Package type</label>
+              <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">סוג חבילה</label>
               <div className="space-y-2">
                 {tpl.types.map(t => (
                   <button key={t} onClick={() => setPkgTypeName(t)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] border-[1.5px] transition-all text-left ${
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] border-[1.5px] transition-all text-start ${
                       pkgTypeName === t ? 'bg-evo-elevated border-evo-purple-mid' : 'bg-white border-evo-border'
                     }`}>
                     <div className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center shrink-0 ${
@@ -336,7 +336,7 @@ export default function PackageForm() {
 
           {/* Pricing model */}
           <div>
-            <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">Pricing model</label>
+            <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">מודל תמחור</label>
             <div className="grid grid-cols-3 gap-2">
               {PRICE_TYPES.map(pt => (
                 <button key={pt.value} onClick={() => setPkgPriceType(pt.value)}
@@ -354,7 +354,7 @@ export default function PackageForm() {
           {/* Price */}
           <div>
             <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
-              Price {pkgPriceType === 'per_hour' ? '(per hour)' : pkgPriceType === 'per_guest' ? '(per person)' : ''}
+              מחיר {pkgPriceType === 'per_hour' ? '(לשעה)' : pkgPriceType === 'per_guest' ? '(לאדם)' : ''}
             </label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-evo-muted font-bold">₪</span>
@@ -365,19 +365,19 @@ export default function PackageForm() {
 
           {/* Guests & timing */}
           <div className="grid grid-cols-2 gap-3">
-            <Stepper label="Min guests"     value={pkgMinGuests} onChange={setPkgMinGuests} min={0} />
-            <Stepper label="Max guests"     value={pkgMaxGuests} onChange={setPkgMaxGuests} min={0} />
+            <Stepper label="מינ. אורחים"    value={pkgMinGuests} onChange={setPkgMinGuests} min={0} />
+            <Stepper label="מקס. אורחים"   value={pkgMaxGuests} onChange={setPkgMaxGuests} min={0} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <Stepper label="Min hours"      value={pkgMinHours}  onChange={setPkgMinHours}  min={1} max={24} />
-            <Stepper label="Setup time (h)" value={setupTime}    onChange={setSetupTime}    min={0} max={12} />
+            <Stepper label="מינ. שעות"       value={pkgMinHours}  onChange={setPkgMinHours}  min={1} max={24} />
+            <Stepper label="זמן הכנה (שע')" value={setupTime}    onChange={setSetupTime}    min={0} max={12} />
           </div>
 
           {/* Staff toggle */}
           <div className="flex items-center justify-between bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3">
             <div>
-              <p className="text-sm font-bold text-evo-text">Staff included in price</p>
-              <p className="text-xs text-evo-muted font-medium">Technician, bartender, photographer, etc.</p>
+              <p className="text-sm font-bold text-evo-text">צוות כלול במחיר</p>
+              <p className="text-xs text-evo-muted font-medium">טכנאי, ברמן, צלם וכו'</p>
             </div>
             <button onClick={() => setStaffIncluded(p => !p)}
               className={`w-11 h-6 rounded-full transition-all ${staffIncluded ? 'bg-evo-purple-mid' : 'bg-evo-border'}`}>
@@ -387,12 +387,12 @@ export default function PackageForm() {
 
           {/* Description — mandatory */}
           <div>
-            <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">Package description</label>
+            <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">תיאור החבילה</label>
             <p className="text-xs text-evo-muted font-medium mb-2">
-              Describe what's included in this package and which products or equipment are provided. Be specific — clients want to know exactly what they're booking.
+              תאר מה כלול בחבילה ואילו מוצרים או ציוד מסופקים. היה ספציפי — לקוחות רוצים לדעת בדיוק מה הם מזמינים.
             </p>
             <textarea value={pkgDesc} onChange={e => setPkgDesc(e.target.value)} rows={4}
-              placeholder="e.g. Includes 2 JBL SRX815 speakers, 1 subwoofer, Pioneer DJM-900 mixer, 2 wireless microphones, and a full-event technician. Setup takes 2 hours and covers venues up to 300 guests."
+              placeholder="לדוגמה: כולל 2 רמקולי JBL SRX815, 1 סאב, מיקסר Pioneer DJM-900, 2 מיקרופונים אלחוטיים, וטכנאי לאורך האירוע. הקמה לוקחת כ-2 שעות ומתאים לאולמות עד 300 אורחים."
               className={`w-full bg-white border-[1.5px] rounded-xl px-4 py-3.5 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none transition-colors resize-none ${
                 pkgDesc.length > 10 ? 'border-evo-green' : 'border-evo-border focus:border-evo-purple-mid'
               }`} />
@@ -402,7 +402,7 @@ export default function PackageForm() {
           {/* Template fields */}
           {tpl && pkgTypeName && (
             <div className="space-y-3">
-              <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">What's included — {pkgTypeName.split('(')[0].trim()}</p>
+              <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">מה כלול — {pkgTypeName.split('(')[0].trim()}</p>
               {tpl.fields.map(field => (
                 <TemplateField key={field.key} field={field} value={templateValues[field.key]} onChange={val => setTplField(field.key, val)} />
               ))}
@@ -412,12 +412,12 @@ export default function PackageForm() {
           {/* Add-ons */}
           <div>
             <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
-              Add-ons <span className="normal-case font-medium">(optional extras)</span>
+              תוספות <span className="normal-case font-medium">(אופציונלי)</span>
             </label>
             <div className="flex gap-2 mb-2">
               <input type="text" value={addOnInput} onChange={e => setAddOnInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && addAddOn()}
-                placeholder="e.g. Extra microphone, LED truss…"
+                placeholder="לדוגמה: מיקרופון נוסף, LED truss…"
                 className="flex-1 bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors" />
               <button onClick={addAddOn}
                 className="w-11 h-11 rounded-xl bg-evo-elevated flex items-center justify-center shrink-0">
@@ -441,7 +441,7 @@ export default function PackageForm() {
           {/* Badge */}
           <div>
             <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
-              Package badge <span className="normal-case font-medium text-[10px]">· Optional</span>
+              תגית חבילה <span className="normal-case font-medium text-[10px]">· אופציונלי</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {PKG_BADGES.map(b => (

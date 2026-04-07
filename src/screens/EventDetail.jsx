@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Check, AlertCircle, Send } from 'lucide-react'
 import { useSupplier } from '../context/SupplierContext'
 
-const TABS = ['Brief', 'Timeline', 'Payments', 'EVO Chat']
+const TABS = ['בריף', 'ציר זמן', 'תשלומים', "צ'אט EVO"]
 
 export default function EventDetail() {
   const { activeEvent: evt, navigate } = useSupplier()
@@ -18,7 +18,7 @@ export default function EventDetail() {
     setMsgs(p => [...p, { id: Date.now(), from: 'supplier', text: msg, time: 'now' }])
     setMsg('')
     setTimeout(() => {
-      setMsgs(p => [...p, { id: Date.now() + 1, from: 'evo', text: "Understood — I'll handle that and keep you updated.", time: 'now' }])
+      setMsgs(p => [...p, { id: Date.now() + 1, from: 'evo', text: "מובן — אטפל בזה ואעדכן אותך.", time: 'עכשיו' }])
     }, 1200)
   }
 
@@ -44,10 +44,10 @@ export default function EventDetail() {
       {/* Quick stats */}
       <div className="grid grid-cols-4 border-b border-evo-border shrink-0 bg-white">
         {[
-          ['Guests', evt.guestCount],
-          ['Package', evt.packageName],
-          ['Value', `₪${(evt.totalValue / 1000).toFixed(0)}K`],
-          ['Days', evt.daysAway > 0 ? evt.daysAway : '—'],
+          ['אורחים', evt.guestCount],
+          ['חבילה', evt.packageName],
+          ['שווי', `₪${(evt.totalValue / 1000).toFixed(0)}K`],
+          ['ימים', evt.daysAway > 0 ? evt.daysAway : '—'],
         ].map(([k, v]) => (
           <div key={k} className="py-3 text-center border-r border-evo-border last:border-0">
             <p className="text-evo-text text-sm font-bold">{v}</p>
@@ -73,11 +73,11 @@ export default function EventDetail() {
             <motion.div key="brief" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }} className="px-6 py-5 space-y-6 pb-8">
               <div>
-                <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-muted mb-3">Style Direction</p>
+                <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-muted mb-3">כיוון סגנון</p>
                 <p className="text-evo-muted text-sm leading-relaxed">{evt.brief.style}</p>
               </div>
               <div>
-                <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-muted mb-3">Colour Palette</p>
+                <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-muted mb-3">פלטת צבעים</p>
                 <div className="flex gap-2">
                   {evt.brief.colorPalette.map((c, i) => (
                     <div key={i} className="flex flex-col items-center gap-1.5">
@@ -89,7 +89,7 @@ export default function EventDetail() {
               </div>
               {evt.brief.keyRequirements.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-muted mb-3">Key Requirements</p>
+                  <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-muted mb-3">דרישות עיקריות</p>
                   <div className="space-y-2">
                     {evt.brief.keyRequirements.map((r, i) => (
                       <div key={i} className="flex gap-3 items-start bg-white rounded-xl border-[1.5px] border-evo-border px-4 py-3">
@@ -102,7 +102,7 @@ export default function EventDetail() {
               )}
               {evt.brief.venueNotes && (
                 <div>
-                  <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-muted mb-3">Venue Notes</p>
+                  <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-muted mb-3">הערות מקום</p>
                   <div className="bg-white border-[1.5px] border-evo-border rounded-[20px] p-4">
                     <p className="text-evo-muted text-sm leading-relaxed">{evt.brief.venueNotes}</p>
                   </div>
@@ -110,7 +110,7 @@ export default function EventDetail() {
               )}
               {evt.review && (
                 <div>
-                  <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-muted mb-3">Client Review</p>
+                  <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-muted mb-3">ביקורת לקוח</p>
                   <div className="bg-white border-[1.5px] border-evo-border rounded-[20px] p-5">
                     <div className="flex items-center gap-1 mb-3">
                       {Array.from({ length: 5 }).map((_, i) => (
@@ -157,7 +157,7 @@ export default function EventDetail() {
                           </p>
                           <span className="text-evo-muted text-xs shrink-0">{item.date}</span>
                         </div>
-                        {item.urgent && <p className="text-amber-500 text-xs mt-0.5">Action required</p>}
+                        {item.urgent && <p className="text-amber-500 text-xs mt-0.5">נדרשת פעולה</p>}
                       </div>
                     </div>
                   ))}
@@ -171,24 +171,24 @@ export default function EventDetail() {
               transition={{ duration: 0.2 }} className="px-6 py-5 space-y-4 pb-8">
               <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-5"
                 style={{ boxShadow: 'rgba(45,27,105,0.08) 0px 2px 12px' }}>
-                <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-muted mb-4">Payment Summary</p>
+                <p className="text-xs font-bold tracking-[0.2em] uppercase text-evo-muted mb-4">סיכום תשלומים</p>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-evo-muted text-sm">Total value</span>
+                    <span className="text-evo-muted text-sm">שווי כולל</span>
                     <span className="text-evo-text font-semibold">₪{evt.totalValue.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-evo-muted text-sm">Deposit received</span>
+                    <span className="text-evo-muted text-sm">מקדמה התקבלה</span>
                     <span className="text-evo-green font-semibold">₪{evt.depositPaid.toLocaleString()}</span>
                   </div>
                   <div className="h-px bg-evo-border" />
                   <div className="flex justify-between">
-                    <span className="text-evo-text text-sm font-semibold">Remaining</span>
+                    <span className="text-evo-text text-sm font-semibold">יתרה לתשלום</span>
                     <span className="text-evo-accent text-lg font-bold">₪{evt.remaining.toLocaleString()}</span>
                   </div>
                   {evt.remainingDue && (
                     <div className="flex justify-between">
-                      <span className="text-evo-muted text-xs">Due date</span>
+                      <span className="text-evo-muted text-xs">מועד תשלום</span>
                       <span className="text-evo-muted text-xs">{evt.remainingDue}</span>
                     </div>
                   )}
@@ -197,16 +197,16 @@ export default function EventDetail() {
               <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-4 flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-evo-green shrink-0" />
                 <div>
-                  <p className="text-evo-text text-sm font-medium">Deposit paid — {evt.depositDate}</p>
-                  <p className="text-evo-muted text-xs mt-0.5">Processed by EVO · ₪{evt.depositPaid.toLocaleString()}</p>
+                  <p className="text-evo-text text-sm font-medium">מקדמה שולמה — {evt.depositDate}</p>
+                  <p className="text-evo-muted text-xs mt-0.5">עובד ע"י EVO · ₪{evt.depositPaid.toLocaleString()}</p>
                 </div>
               </div>
               {evt.remaining > 0 && (
                 <div className="bg-white rounded-[20px] border-[1.5px] border-dashed border-evo-border p-4 flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-evo-dim shrink-0" />
                   <div>
-                    <p className="text-evo-muted text-sm">Final payment pending — {evt.remainingDue}</p>
-                    <p className="text-evo-muted text-xs mt-0.5">EVO will process on event completion</p>
+                    <p className="text-evo-muted text-sm">תשלום סופי ממתין — {evt.remainingDue}</p>
+                    <p className="text-evo-muted text-xs mt-0.5">EVO יעבד עם סיום האירוע</p>
                   </div>
                 </div>
               )}
@@ -234,7 +234,7 @@ export default function EventDetail() {
               <div className="px-6 py-4 border-t border-evo-border bg-white">
                 <div className="flex gap-3">
                   <input value={msg} onChange={e => setMsg(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMsg()}
-                    placeholder="Message EVO..."
+                    placeholder="הודעה ל-EVO..."
                     className="flex-1 bg-evo-bg border-[1.5px] border-evo-border rounded-xl px-4 py-3 text-evo-text text-sm placeholder-evo-muted focus:outline-none focus:border-evo-purple-mid transition-colors" />
                   <button onClick={sendMsg}
                     className="w-10 h-10 rounded-xl bg-evo-purple-mid flex items-center justify-center active:scale-95"
