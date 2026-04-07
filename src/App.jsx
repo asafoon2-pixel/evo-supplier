@@ -15,6 +15,8 @@ import Profile        from './screens/Profile'
 import CalendarScreen from './screens/CalendarScreen'
 import Payments       from './screens/Payments'
 import Insights       from './screens/Insights'
+import PackageForm    from './screens/PackageForm'
+import ProductsForm   from './screens/ProductsForm'
 
 const screenMap = {
   entry:        Entry,
@@ -29,6 +31,8 @@ const screenMap = {
   calendar:     CalendarScreen,
   payments:     Payments,
   insights:     Insights,
+  packageForm:  PackageForm,
+  productsForm: ProductsForm,
 }
 
 const tabScreens = ['home', 'calendar', 'events', 'leadDetail', 'eventDetail',
@@ -72,7 +76,7 @@ function HomeIndicator() {
 }
 
 function AppContent() {
-  const { screen } = useSupplier()
+  const { screen, authLoading } = useSupplier()
   const Screen = screenMap[screen] || Entry
   const showTabs = tabScreens.includes(screen)
 
@@ -87,16 +91,35 @@ function AppContent() {
       >
         <StatusBar />
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto no-scrollbar">
-          <AnimatePresence mode="wait">
-            <PageTransition key={screen}>
-              <Screen />
-            </PageTransition>
-          </AnimatePresence>
-        </div>
+        {/* Auth loading splash */}
+        {authLoading ? (
+          <div className="flex-1 flex flex-col items-center justify-center gap-4">
+            <div
+              className="flex items-center justify-center"
+              style={{
+                width: 80, height: 80, borderRadius: 20,
+                background: 'linear-gradient(145deg, #2D1B8A, #1E1060)',
+                boxShadow: '0 8px 28px rgba(45,27,105,0.4)',
+              }}
+            >
+              <span className="text-white text-2xl font-extrabold tracking-tight">EVO</span>
+            </div>
+            <p className="text-evo-muted text-sm font-semibold">טוען...</p>
+          </div>
+        ) : (
+          <>
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto no-scrollbar">
+              <AnimatePresence mode="wait">
+                <PageTransition key={screen}>
+                  <Screen />
+                </PageTransition>
+              </AnimatePresence>
+            </div>
 
-        {showTabs && <TabBar />}
+            {showTabs && <TabBar />}
+          </>
+        )}
         <HomeIndicator />
       </div>
     </div>

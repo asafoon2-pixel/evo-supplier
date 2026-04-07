@@ -116,7 +116,9 @@ export default function Events() {
             })}
             {filteredEvents.length === 0 && (
               <div className="text-center py-16">
-                <p className="text-evo-muted text-sm font-medium">No {evtFilter} events</p>
+                <p className="text-3xl mb-3">📅</p>
+                <p className="text-evo-text text-sm font-semibold mb-1">עדיין אין אירועים</p>
+                <p className="text-evo-muted text-xs">האירועים שלך יופיעו כאן לאחר הזמנה</p>
               </div>
             )}
           </div>
@@ -195,9 +197,16 @@ export default function Events() {
                 </motion.button>
               )
             })}
-            {filteredLeads.length === 0 && (
+            {filteredLeads.length === 0 && leads.length === 0 && (
               <div className="text-center py-16">
-                <p className="text-evo-muted text-sm font-medium">No leads in this category</p>
+                <p className="text-3xl mb-3">📭</p>
+                <p className="text-evo-text text-sm font-semibold mb-1">עדיין אין לידים</p>
+                <p className="text-evo-muted text-xs">EVO ישלח לך לידים מותאמים בקרוב</p>
+              </div>
+            )}
+            {filteredLeads.length === 0 && leads.length > 0 && (
+              <div className="text-center py-16">
+                <p className="text-evo-muted text-sm font-medium">אין לידים בקטגוריה זו</p>
               </div>
             )}
           </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
-import { events } from '../data/index'
+import { useSupplier } from '../context/SupplierContext'
 
 const DAYS   = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 const MONTHS = ['January','February','March','April','May','June',
@@ -25,6 +25,7 @@ function parseGoogleDate(d) {
 }
 
 export default function CalendarScreen() {
+  const { events } = useSupplier()
   const today = new Date()
   const [viewYear,  setViewYear]  = useState(today.getFullYear())
   const [viewMonth, setViewMonth] = useState(today.getMonth())
@@ -326,6 +327,9 @@ export default function CalendarScreen() {
       {/* EVO booked events */}
       <div className="px-6">
         <p className="text-xs font-bold tracking-[0.25em] uppercase text-evo-muted mb-3">EVO Booked Dates</p>
+        {upcomingEvo.length === 0 && (
+          <p className="text-evo-muted text-xs font-medium py-2">אין אירועים מתוזמנים עדיין</p>
+        )}
         <div className="space-y-3">
           {upcomingEvo.map(event => (
             <motion.div key={event.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}

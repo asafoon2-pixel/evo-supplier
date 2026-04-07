@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Admin-only fields that clients may never update ────────
+    function isAdminField(key) {
+      return key in [
+        'is_approved', 'is_active', 'verification_status',
+        'avg_rating', 'total_events', 'total_revenue', 'total_reviews',
+        'response_rate', 'cancellation_rate', 'repeat_client_rate'
+      ];
+    }
+
+    function noAdminFieldsChanged() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny([
+          'is_approved', 'is_active', 'verification_status',
+          'avg_rating', 'total_events', 'total_revenue', 'total_reviews',
+          'response_rate', 'cancellation_rate', 'repeat_client_rate'
+        ]);
+    }
+
+    // ── Vendors collection ─────────────────────────────────────
+    match /vendors/{uid} {
+
+      // Authenticated user can read only their own vendor doc
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // Vendor can create their own doc with safe defaults only
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.is_approved == false
+        && request.resource.data.is_active == false
+        && request.resource.data.verification_status == 'pending';
+
+      // Vendor can update their own doc but cannot touch admin-only fields
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && noAdminFieldsChanged();
+
+      // Deletes always via admin SDK only
+      allow delete: if false;
+
+      // ── products sub-collection ────────────────────────────
+      match /products/{productId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // ── packages sub-collection ────────────────────────────
+      match /packages/{packageId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // ── media sub-collection ───────────────────────────────
+      match /media/{mediaId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // ── availability sub-collection ────────────────────────
+      match /availability/{availId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // ── pricing_rules sub-collection ───────────────────────
+      match /pricing_rules/{ruleId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // ── documents sub-collection ───────────────────────────
+      match /documents/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // ── reviews sub-collection ─────────────────────────────
+      // Vendor can read their own reviews; writes are admin-only
+      match /reviews/{reviewId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow write: if false;
+      }
+    }
+
+    // ── Events collection ──────────────────────────────────────
+    match /events/{eventId} {
+      // Vendor can read their own events; writes are by admin/client only
+      allow read: if request.auth != null && resource.data.vendor_id == request.auth.uid;
+      allow write: if false;
+    }
+
+    // All other paths denied
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

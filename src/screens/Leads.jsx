@@ -107,9 +107,16 @@ export default function Leads() {
           )
         })}
 
-        {filtered.length === 0 && (
+        {filtered.length === 0 && leads.length === 0 && (
           <div className="text-center py-16">
-            <p className="text-evo-muted text-sm">No leads in this category</p>
+            <p className="text-3xl mb-3">📭</p>
+            <p className="text-evo-text text-sm font-semibold mb-1">עדיין אין לידים</p>
+            <p className="text-evo-muted text-xs leading-relaxed">EVO ישלח לך לידים מותאמים<br />לפרופיל שלך בקרוב</p>
+          </div>
+        )}
+        {filtered.length === 0 && leads.length > 0 && (
+          <div className="text-center py-16">
+            <p className="text-evo-muted text-sm">אין לידים בקטגוריה זו</p>
           </div>
         )}
       </div>
