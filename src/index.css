@@ -5,27 +5,88 @@
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+}
+
+html {
+  background-color: #EDE8DF;
+  direction: rtl;
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  background-color: #E0DFF5;
-  color: #1A1A2E;
+  font-family: 'Heebo', 'Poppins', system-ui, sans-serif;
+  background-color: #EDE8DF;
+  color: #2C2016;
   overflow-x: hidden;
+  margin: 0;
+  direction: rtl;
+  text-align: right;
 }
 
-::-webkit-scrollbar { width: 3px; }
-::-webkit-scrollbar-track { background: #EEF0FF; }
-::-webkit-scrollbar-thumb { background: #C5B8F0; border-radius: 2px; }
+/* English-specific fields — force LTR */
+input[type="email"],
+input[type="url"],
+input[type="tel"] {
+  direction: ltr;
+  text-align: left;
+}
 
+/* Password field — LTR placeholder looks natural */
+input[type="password"] {
+  direction: ltr;
+  text-align: left;
+}
+
+/* Allow individual elements to override */
+[dir="ltr"] { direction: ltr; text-align: left; }
+
+/* ── RTL text alignment fixes ───────────────────────────── */
+/* All text elements default to right in RTL */
+[dir="rtl"] p,
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] span:not(.no-flip),
+[dir="rtl"] label,
+[dir="rtl"] button {
+  text-align: right;
+}
+
+/* Flex containers: items flow right→left in RTL automatically */
+/* but icon+text pairs need gap on correct side */
+[dir="rtl"] .flex { direction: rtl; }
+
+/* Center-aligned items stay centered */
+[dir="rtl"] .text-center,
+[dir="rtl"] .items-center.justify-center {
+  text-align: center;
+}
+
+/* Inputs: Hebrew text inputs are RTL, English fields stay LTR */
+[dir="rtl"] input:not([type="email"]):not([type="password"]):not([type="url"]):not([type="tel"]):not([type="number"]),
+[dir="rtl"] textarea {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] input[type="number"] {
+  direction: ltr;
+  text-align: right;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: #F0EBE1; }
+::-webkit-scrollbar-thumb { background: #C8BFB0; border-radius: 2px; }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Swipe card ─────────────────────────────────────────── */
 .swipe-card { user-select: none; touch-action: none; }
 
-@layer utilities {
-  .text-accent   { color: #6C5CE7; }
-  .bg-accent     { background-color: #6C5CE7; }
-  .border-accent { border-color: #6C5CE7; }
-}
-
+/* ── Keyframes ──────────────────────────────────────────── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -35,13 +96,43 @@ body {
   to   { opacity: 1; transform: scale(1); }
 }
 @keyframes pulseGlow {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50%       { opacity: 0.8; transform: scale(1.04); }
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50%       { opacity: 0.7;  transform: scale(1.06); }
+}
+@keyframes floatUp {
+  0%   { opacity: 0; transform: translateY(16px); }
+  30%  { opacity: 1; transform: translateY(0); }
+  85%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes splashFade {
+  0%   { opacity: 1; }
+  80%  { opacity: 1; }
+  100% { opacity: 0; }
 }
 
-.animate-fade-up    { animation: fadeUp 0.25s ease-out forwards; }
-.animate-pop-in     { animation: popIn 0.25s ease-out forwards; }
+/* ── Utility animations ─────────────────────────────────── */
+.animate-fade-up    { animation: fadeUp 0.3s ease-out forwards; }
+.animate-pop-in     { animation: popIn 0.3s ease-out forwards; }
 .animate-pulse-glow { animation: pulseGlow 2.4s ease-in-out infinite; }
+.animate-float-up   { animation: floatUp 2.8s ease-out forwards; }
 
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* ── Dot texture overlay (for colored cards) ────────────── */
+.dot-texture {
+  background-image: radial-gradient(circle, rgba(44,32,22,0.07) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+/* ── Card defaults ──────────────────────────────────────── */
+.card {
+  background: #FDFAF5;
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(44, 32, 22, 0.08);
+}
+
+/* ── Color utilities ────────────────────────────────────── */
+@layer utilities {
+  .text-accent    { color: #6B5FE4; }
+  .bg-accent      { background-color: #6B5FE4; }
+  .border-accent  { border-color: #6B5FE4; }
+}

@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { SupplierProvider, useSupplier } from './context/SupplierContext'
+import { LanguageProvider } from './context/LanguageContext'
 import PageTransition from './components/PageTransition'
 import TabBar from './components/TabBar'
+import SplashScreen from './components/SplashScreen'
 
 import Entry          from './screens/Entry'
 import Onboarding     from './screens/Onboarding'
@@ -38,89 +41,53 @@ const screenMap = {
 const tabScreens = ['home', 'calendar', 'events', 'leadDetail', 'eventDetail',
                     'catalog', 'profile', 'payments', 'insights']
 
-function StatusBar() {
-  return (
-    <div className="flex items-center justify-between px-7 pt-3 pb-1 bg-evo-bg shrink-0">
-      <span className="text-[13px] font-bold text-evo-text">9:41</span>
-      <div className="flex items-center gap-1">
-        {/* Signal bars */}
-        <svg width="17" height="12" viewBox="0 0 17 12" fill="none">
-          <rect x="0"  y="6" width="3" height="6" rx="1" fill="#1A1A2E"/>
-          <rect x="4"  y="4" width="3" height="8" rx="1" fill="#1A1A2E"/>
-          <rect x="8"  y="2" width="3" height="10" rx="1" fill="#1A1A2E"/>
-          <rect x="12" y="0" width="3" height="12" rx="1" fill="#1A1A2E"/>
-        </svg>
-        {/* WiFi */}
-        <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-          <path d="M8 9.5a1 1 0 100 2 1 1 0 000-2z" fill="#1A1A2E"/>
-          <path d="M5 7.2C5.9 6.4 6.9 6 8 6s2.1.4 3 1.2" stroke="#1A1A2E" strokeWidth="1.4" strokeLinecap="round"/>
-          <path d="M2.5 4.8C4.1 3.2 5.9 2.4 8 2.4s3.9.8 5.5 2.4" stroke="#1A1A2E" strokeWidth="1.4" strokeLinecap="round"/>
-        </svg>
-        {/* Battery */}
-        <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
-          <rect x="0.5" y="0.5" width="21" height="11" rx="2.5" stroke="#1A1A2E" strokeOpacity=".35"/>
-          <rect x="2" y="2" width="16" height="8" rx="1.5" fill="#1A1A2E"/>
-          <path d="M23 4v4a2 2 0 000-4z" fill="#1A1A2E" fillOpacity=".4"/>
-        </svg>
-      </div>
-    </div>
-  )
-}
-
-function HomeIndicator() {
-  return (
-    <div className="py-2 flex justify-center shrink-0 bg-evo-bg">
-      <div className="w-32 h-1 rounded-full bg-evo-text/20" />
-    </div>
-  )
-}
-
 function AppContent() {
   const { screen, authLoading } = useSupplier()
+  const [splashDone, setSplashDone] = useState(false)
+
+  // Splash shows for at least 2 seconds and until auth is resolved
+  useEffect(() => {
+    const t = setTimeout(() => setSplashDone(true), 2000)
+    return () => clearTimeout(t)
+  }, [])
+
+  const showSplash = !splashDone || authLoading
   const Screen = screenMap[screen] || Entry
   const showTabs = tabScreens.includes(screen)
 
   return (
-    <div className="min-h-screen bg-evo-outer flex items-start justify-center sm:py-8 sm:px-4">
+    // Outer: cream background fills the whole viewport on desktop
+    <div
+      className="min-h-screen flex items-start justify-center"
+      style={{ background: '#EDE8DF' }}
+    >
+      {/* Inner: mobile column, max 430px, no fake phone frame */}
       <div
-        className="relative bg-evo-bg flex flex-col w-full sm:max-w-[390px] min-h-screen sm:min-h-0 sm:rounded-[44px] sm:overflow-hidden"
+        className="relative flex flex-col w-full min-h-screen"
         style={{
-          height: 'auto',
-          boxShadow: '0 24px 80px rgba(45,27,105,0.18)',
+          maxWidth: 430,
+          background: '#F5F0E8',
+          paddingTop:    'env(safe-area-inset-top)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
         }}
       >
-        <StatusBar />
+        {/* Splash screen overlay */}
+        <AnimatePresence>
+          {showSplash && <SplashScreen />}
+        </AnimatePresence>
 
-        {/* Auth loading splash */}
-        {authLoading ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4">
-            <div
-              className="flex items-center justify-center"
-              style={{
-                width: 80, height: 80, borderRadius: 20,
-                background: 'linear-gradient(145deg, #2D1B8A, #1E1060)',
-                boxShadow: '0 8px 28px rgba(45,27,105,0.4)',
-              }}
-            >
-              <span className="text-white text-2xl font-extrabold tracking-tight">EVO</span>
-            </div>
-            <p className="text-evo-muted text-sm font-semibold">טוען...</p>
+        {/* App content (always mounted, hidden under splash) */}
+        <div className={`flex flex-col flex-1 ${showSplash ? 'invisible' : 'visible'}`}>
+          <div className="flex-1 overflow-y-auto no-scrollbar">
+            <AnimatePresence mode="wait">
+              <PageTransition key={screen}>
+                <Screen />
+              </PageTransition>
+            </AnimatePresence>
           </div>
-        ) : (
-          <>
-            {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto no-scrollbar">
-              <AnimatePresence mode="wait">
-                <PageTransition key={screen}>
-                  <Screen />
-                </PageTransition>
-              </AnimatePresence>
-            </div>
 
-            {showTabs && <TabBar />}
-          </>
-        )}
-        <HomeIndicator />
+          {showTabs && <TabBar />}
+        </div>
       </div>
     </div>
   )
@@ -128,8 +95,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <SupplierProvider>
-      <AppContent />
-    </SupplierProvider>
+    <LanguageProvider>
+      <SupplierProvider>
+        <AppContent />
+      </SupplierProvider>
+    </LanguageProvider>
   )
 }

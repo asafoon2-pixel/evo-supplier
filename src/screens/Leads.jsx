@@ -54,7 +54,7 @@ export default function Leads() {
             <motion.button key={lead.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
               onClick={() => { setActiveLead(lead); navigate('leadDetail') }}
-              className="w-full rounded-[20px] border-[1.5px] border-evo-border bg-white overflow-hidden text-left hover:border-evo-dim transition-all active:scale-[0.99]"
+              className="w-full rounded-[20px] border-[1.5px] border-evo-border bg-white overflow-hidden text-start hover:border-evo-dim transition-all active:scale-[0.99]"
               style={{ boxShadow: 'rgba(45,27,105,0.08) 0px 2px 12px' }}>
 
               {/* Hero image strip */}

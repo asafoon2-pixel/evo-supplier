@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import {
   doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
-  collection, query, where, serverTimestamp,
+  collection, query, where, serverTimestamp, orderBy,
 } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 
@@ -41,8 +41,24 @@ export function SupplierProvider({ children }) {
   const navigate = (s) => { setScreen(s); if (TAB_SCREENS.includes(s)) setActiveTab(s) }
   const goTab    = (tab) => { setActiveTab(tab); setScreen(tab) }
 
-  const acceptLead  = (id) => setLeads(prev => prev.map(l => l.id === id ? { ...l, status: 'booked'   } : l))
-  const declineLead = (id) => setLeads(prev => prev.map(l => l.id === id ? { ...l, status: 'declined' } : l))
+  const acceptLead = async (id) => {
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, status: 'booked' } : l))
+    try {
+      await updateDoc(doc(db, 'leads', id), { status: 'booked', updated_at: serverTimestamp() })
+    } catch (err) {
+      console.error('acceptLead Firestore error:', err)
+    }
+  }
+
+  const declineLead = async (id) => {
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, status: 'declined' } : l))
+    try {
+      await updateDoc(doc(db, 'leads', id), { status: 'declined', updated_at: serverTimestamp() })
+    } catch (err) {
+      console.error('declineLead Firestore error:', err)
+    }
+  }
+
   const newLeadCount = leads.filter(l => l.status === 'new').length
 
   // ── Load vendor doc + sub-collections ────────────────────────
@@ -88,7 +104,18 @@ export function SupplierProvider({ children }) {
       setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() })))
     } catch (err) {
       console.error('שגיאה בטעינת אירועים:', err)
-      // Non-fatal — events stay empty
+    }
+  }
+
+  // ── Load leads from Firestore ─────────────────────────────────
+  const loadLeads = async (uid) => {
+    try {
+      const q = query(collection(db, 'leads'), where('vendor_id', '==', uid))
+      const snap = await getDocs(q)
+      setLeads(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+    } catch (err) {
+      console.error('שגיאה בטעינת לידים:', err)
+      // Non-fatal — leads stay empty
     }
   }
 
@@ -265,8 +292,9 @@ export function SupplierProvider({ children }) {
           }
 
           if (hasDoc === true) {
-            // Load events in background (non-blocking)
+            // Load events + leads in background (non-blocking)
             loadEvents(firebaseUser.uid).catch(() => {})
+            loadLeads(firebaseUser.uid).catch(() => {})
             setScreen('home')
             setActiveTab('home')
           } else if (loadError) {
@@ -283,6 +311,7 @@ export function SupplierProvider({ children }) {
           setProducts([])
           setPricingRules([])
           setEvents([])
+          setLeads([])
           setScreen('entry')
         }
       } catch (e) {

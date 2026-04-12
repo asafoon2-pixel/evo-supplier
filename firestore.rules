@@ -81,9 +81,21 @@ service cloud.firestore {
 
     // ── Events collection ──────────────────────────────────────
     match /events/{eventId} {
-      // Vendor can read their own events; writes are by admin/client only
       allow read: if request.auth != null && resource.data.vendor_id == request.auth.uid;
       allow write: if false;
+    }
+
+    // ── Leads collection ───────────────────────────────────────
+    match /leads/{leadId} {
+      // Vendor can read their own leads
+      allow read: if request.auth != null && resource.data.vendor_id == request.auth.uid;
+      // Vendor can only update status field (accept/decline)
+      allow update: if request.auth != null
+        && resource.data.vendor_id == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'updated_at']);
+      // Creates and deletes are admin-only
+      allow create, delete: if false;
     }
 
     // All other paths denied
