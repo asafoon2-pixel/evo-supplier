@@ -6,7 +6,7 @@ import { doc, setDoc, addDoc, collection, serverTimestamp } from 'firebase/fires
 import { auth, db } from '../firebase.js'
 
 // ─── CONSTANTS ────────────────────────────────────────────────
-const STEPS = ['category','identity','contact','story','package','products','pricing','documents','analysis','softlock','dashboard']
+const STEPS = ['category','identity','contact','story','products','package','pricing','documents','analysis','softlock','dashboard']
 
 const CATEGORIES = [
   { icon: '🔊', name: 'Sound',         desc: 'מערכות הגברה, רמקולים, ציוד DJ' },
@@ -424,10 +424,12 @@ export default function Onboarding() {
   const [pkgAddOns,      setPkgAddOns]      = useState([])
   const [addOnInput,     setAddOnInput]     = useState('')
   const [pkgBadge,       setPkgBadge]       = useState(null)
+  const [pkgIncludedProductIds, setPkgIncludedProductIds] = useState([])
 
-  // Step 5: Products
+  // Step 4: Products (now before package)
   const [products, setProducts] = useState([])
-  const [editProduct, setEditProduct] = useState({ name: '', description: '', price: '', price_type: 'fixed', max_guests: '' })
+  const [editProduct, setEditProduct] = useState({ name: '', description: '', price: '', price_type: 'fixed', max_guests: '', image: null })
+  const [dragProductId, setDragProductId] = useState(null)
 
   // Step 6: Pricing rules
   const [pricingRules, setPricingRules] = useState({})
@@ -449,9 +451,10 @@ export default function Onboarding() {
     if (step === 2 && phone.replace(/\D/g, '').length < 9)      { return 'מספר טלפון חייב להכיל לפחות 9 ספרות' }
     if (step === 2 && !city)                                    { return 'יש לבחור עיר' }
     if (step === 3 && bio.length < 20)                          { return 'תיאור קצר מדי — לפחות 20 תווים' }
-    if (step === 4 && pkgTypeName.length === 0)                 { return 'יש לבחור סוג חבילה' }
-    if (step === 4 && pkgDesc.length < 10)                      { return 'תיאור החבילה קצר מדי' }
-    if (step === 4 && !(parseFloat(pkgPrice) > 0))              { return 'יש להזין מחיר חיובי' }
+    if (step === 4 && products.length === 0)                    { return 'יש להוסיף לפחות מוצר אחד' }
+    if (step === 5 && pkgTypeName.length === 0)                 { return 'יש לבחור סוג חבילה' }
+    if (step === 5 && pkgDesc.length < 10)                      { return 'תיאור החבילה קצר מדי' }
+    if (step === 5 && !(parseFloat(pkgPrice) > 0))              { return 'יש להזין מחיר חיובי' }
     return ''
   }
 
@@ -473,9 +476,9 @@ export default function Onboarding() {
   const appendBio = (hint) => setBio(prev => prev ? prev + ' ' + hint : hint)
 
   const addProduct = () => {
-    if (!editProduct.name || !editProduct.price) return
+    if (!editProduct.name || !editProduct.price || !editProduct.image) return
     setProducts(prev => [...prev, { ...editProduct, id: Date.now() }])
-    setEditProduct({ name: '', description: '', price: '', price_type: 'fixed', max_guests: '' })
+    setEditProduct({ name: '', description: '', price: '', price_type: 'fixed', max_guests: '', image: null })
   }
 
   const removeProduct = (id) => setProducts(prev => prev.filter(p => p.id !== id))
@@ -555,6 +558,7 @@ export default function Onboarding() {
             setup_time:     parseInt(setupTime) || 0,
             staff_included: staffIncluded || false,
             add_ons:        pkgAddOns || [],
+            included_product_ids: pkgIncludedProductIds || [],
             badge:          pkgBadge || null,
             is_popular:     pkgBadge === 'most_popular',
             image_url:      pkgImage || null,
@@ -579,6 +583,7 @@ export default function Onboarding() {
               price_type:   p.price_type || 'fixed',
               min_hours:    0,
               max_guests:   p.max_guests ? parseInt(p.max_guests) : 0,
+              image_url:    p.image || null,
               is_available: true,
               sort_order:   i,
               created_at:   serverTimestamp(),
@@ -834,8 +839,112 @@ export default function Onboarding() {
             </motion.div>
           )}
 
-          {/* ── 4: Package Builder ── */}
+          {/* ── 4: Individual Products ── */}
           {step === 4 && (
+            <motion.div key="products" {...slide} className="px-6 pb-6 space-y-5">
+              <StepTitle
+                title="מוצרים בודדים"
+                sub={<span>חובה — הוסף לפחות מוצר אחד. <span className="text-evo-accent font-bold">כל מוצר חייב תמונה</span></span>}
+              />
+
+              {/* Existing products */}
+              {products.length > 0 && (
+                <div className="space-y-2">
+                  {products.map(p => (
+                    <div key={p.id} className="flex items-start gap-3 bg-white rounded-[16px] border-[1.5px] border-evo-green p-3.5">
+                      {p.image && (
+                        <img src={p.image} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-evo-text truncate">{p.name}</p>
+                        {p.description && <p className="text-xs text-evo-muted font-medium mt-0.5 truncate">{p.description}</p>}
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className="text-sm font-extrabold text-evo-purple">₪{Number(p.price).toLocaleString()}</span>
+                          <span className="text-[10px] font-semibold text-evo-muted bg-evo-elevated px-2 py-0.5 rounded-full">{p.price_type === 'per_hour' ? '/שעה' : p.price_type === 'per_guest' ? '/אורח' : 'קבוע'}</span>
+                          {p.max_guests && <span className="text-[10px] text-evo-muted">מקס. {p.max_guests} אורחים</span>}
+                        </div>
+                      </div>
+                      <button onClick={() => removeProduct(p.id)}
+                        className="w-7 h-7 rounded-full bg-evo-elevated flex items-center justify-center shrink-0 mt-0.5">
+                        <X size={12} className="text-evo-muted" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add product form */}
+              <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-4 space-y-4">
+                <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">הוסף מוצר</p>
+
+                {/* Product image — REQUIRED */}
+                <PhotoUpload
+                  label="תמונת מוצר"
+                  hint="חובה — תמונה ברורה של המוצר"
+                  value={editProduct.image}
+                  onChange={img => setEditProduct(p => ({ ...p, image: img }))}
+                  aspect="landscape"
+                />
+
+                <InputField label="שם המוצר" value={editProduct.name}
+                  onChange={e => setEditProduct(p => ({ ...p, name: e.target.value }))}
+                  placeholder="לדוגמה: סאב נוסף, שולחן DJ, אלבום תמונות" />
+
+                <div>
+                  <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">תיאור <span className="normal-case font-medium text-[10px]">· אופציונלי</span></label>
+                  <textarea value={editProduct.description} rows={2}
+                    onChange={e => setEditProduct(p => ({ ...p, description: e.target.value }))}
+                    placeholder="תיאור קצר של הפריט"
+                    className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors resize-none" />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">מודל תמחור</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {PRICE_TYPES.map(pt => (
+                      <button key={pt.value} onClick={() => setEditProduct(p => ({ ...p, price_type: pt.value }))}
+                        className={`flex flex-col items-center gap-1 p-2.5 rounded-[14px] border-[1.5px] transition-all ${
+                          editProduct.price_type === pt.value ? 'bg-evo-elevated border-evo-purple-mid' : 'bg-white border-evo-border'
+                        }`}>
+                        <span className="text-lg">{pt.icon}</span>
+                        <span className={`text-[10px] font-bold text-center ${editProduct.price_type === pt.value ? 'text-evo-purple' : 'text-evo-text'}`}>{pt.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">מחיר (₪)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-evo-muted font-bold text-sm">₪</span>
+                      <input type="number" value={editProduct.price}
+                        onChange={e => setEditProduct(p => ({ ...p, price: e.target.value }))}
+                        placeholder="0"
+                        className="w-full bg-white border-[1.5px] border-evo-border rounded-xl pl-7 pr-3 py-3 text-evo-text text-[14px] focus:outline-none focus:border-evo-purple-mid transition-colors" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">מקס. אורחים <span className="normal-case font-medium text-[10px]">· אופ׳</span></label>
+                    <input type="number" value={editProduct.max_guests}
+                      onChange={e => setEditProduct(p => ({ ...p, max_guests: e.target.value }))}
+                      placeholder="—"
+                      className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-3 py-3 text-evo-text text-[14px] focus:outline-none focus:border-evo-purple-mid transition-colors" />
+                  </div>
+                </div>
+
+                <button onClick={addProduct}
+                  disabled={!editProduct.name || !editProduct.price || !editProduct.image}
+                  className="w-full py-3 rounded-xl text-sm font-extrabold text-white transition-all disabled:opacity-30"
+                  style={{ background: '#2D1B8A' }}>
+                  <Plus size={14} className="inline mr-1.5" />הוסף מוצר
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── 5: Package Builder ── */}
+          {step === 5 && (
             <motion.div key="package" {...slide} className="px-6 pb-6 space-y-5">
               <StepTitle
                 title="בנה את החבילה הראשונה שלך"
@@ -953,6 +1062,82 @@ export default function Onboarding() {
                 </div>
               )}
 
+              {/* Products from step 4 — drag into package */}
+              {products.length > 0 && (
+                <div>
+                  <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
+                    מוצרים שלך — גרור לחבילה <span className="normal-case font-medium text-[10px]">· אופציונלי</span>
+                  </label>
+
+                  {/* Drop zone — shows included products */}
+                  <div
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => {
+                      e.preventDefault()
+                      const id = Number(e.dataTransfer.getData('productId'))
+                      if (id && !pkgIncludedProductIds.includes(id))
+                        setPkgIncludedProductIds(prev => [...prev, id])
+                    }}
+                    className={`mb-3 min-h-[56px] rounded-[16px] border-[2px] border-dashed p-3 transition-all ${
+                      pkgIncludedProductIds.length > 0 ? 'border-evo-purple-mid bg-evo-elevated' : 'border-evo-dim bg-white'
+                    }`}
+                  >
+                    {pkgIncludedProductIds.length === 0 ? (
+                      <p className="text-xs text-evo-muted font-medium text-center py-2">גרור מוצרים לכאן להוספה לחבילה</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {pkgIncludedProductIds.map(id => {
+                          const p = products.find(x => x.id === id)
+                          if (!p) return null
+                          return (
+                            <span key={id} className="flex items-center gap-1.5 text-xs font-bold text-evo-purple bg-white border-[1.5px] border-evo-purple-mid px-3 py-1.5 rounded-full">
+                              {p.image && <img src={p.image} alt="" className="w-4 h-4 rounded-full object-cover" />}
+                              {p.name}
+                              <button onClick={() => setPkgIncludedProductIds(prev => prev.filter(x => x !== id))}>
+                                <X size={10} className="text-evo-muted" />
+                              </button>
+                            </span>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Draggable product cards */}
+                  <div className="space-y-2">
+                    {products.map(p => {
+                      const included = pkgIncludedProductIds.includes(p.id)
+                      return (
+                        <div
+                          key={p.id}
+                          draggable={!included}
+                          onDragStart={e => {
+                            e.dataTransfer.setData('productId', String(p.id))
+                            setDragProductId(p.id)
+                          }}
+                          onDragEnd={() => setDragProductId(null)}
+                          onClick={() => setPkgIncludedProductIds(prev =>
+                            included ? prev.filter(id => id !== p.id) : [...prev, p.id]
+                          )}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-[14px] border-[1.5px] transition-all cursor-grab active:cursor-grabbing select-none ${
+                            included ? 'bg-evo-elevated border-evo-purple-mid opacity-50' :
+                            dragProductId === p.id ? 'opacity-60 scale-[0.97]' :
+                            'bg-white border-evo-border'
+                          }`}
+                        >
+                          {p.image && <img src={p.image} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />}
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-bold truncate ${included ? 'text-evo-purple' : 'text-evo-text'}`}>{p.name}</p>
+                            <p className="text-xs text-evo-muted">₪{Number(p.price).toLocaleString()} · {p.price_type === 'per_hour' ? '/שעה' : p.price_type === 'per_guest' ? '/אורח' : 'קבוע'}</p>
+                          </div>
+                          {included && <Check size={14} className="text-evo-purple shrink-0" />}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Add-ons */}
               <div>
                 <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">תוספות <span className="normal-case font-medium">(תוספות שלקוחות יכולים לבקש)</span></label>
@@ -998,107 +1183,6 @@ export default function Onboarding() {
                   ))}
                 </div>
               </div>
-            </motion.div>
-          )}
-
-          {/* ── 5: Individual Products ── */}
-          {step === 5 && (
-            <motion.div key="products" {...slide} className="px-6 pb-6 space-y-5">
-              <StepTitle
-                title="מוצרים בודדים"
-                sub="הוסף פריטים שלקוחות יכולים להזמין בנפרד — לא חובה אך מומלץ"
-              />
-
-              {/* Existing products */}
-              {products.length > 0 && (
-                <div className="space-y-2">
-                  {products.map(p => (
-                    <div key={p.id} className="flex items-start gap-3 bg-white rounded-[16px] border-[1.5px] border-evo-border p-3.5">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-evo-text truncate">{p.name}</p>
-                        {p.description && <p className="text-xs text-evo-muted font-medium mt-0.5 truncate">{p.description}</p>}
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <span className="text-sm font-extrabold text-evo-purple">₪{Number(p.price).toLocaleString()}</span>
-                          <span className="text-[10px] font-semibold text-evo-muted bg-evo-elevated px-2 py-0.5 rounded-full">{p.price_type === 'per_hour' ? '/שעה' : p.price_type === 'per_guest' ? '/אורח' : 'קבוע'}</span>
-                          {p.max_guests && <span className="text-[10px] text-evo-muted">מקס. {p.max_guests} אורחים</span>}
-                        </div>
-                      </div>
-                      <button onClick={() => removeProduct(p.id)}
-                        className="w-7 h-7 rounded-full bg-evo-elevated flex items-center justify-center shrink-0 mt-0.5">
-                        <X size={12} className="text-evo-muted" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Add product form */}
-              <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-4 space-y-4">
-                <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">הוסף מוצר</p>
-
-                <InputField label="שם המוצר" value={editProduct.name}
-                  onChange={e => setEditProduct(p => ({ ...p, name: e.target.value }))}
-                  placeholder="לדוגמה: סאב נוסף, שולחן DJ, אלבום תמונות" />
-
-                <div>
-                  <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">תיאור <span className="normal-case font-medium text-[10px]">· אופציונלי</span></label>
-                  <textarea value={editProduct.description} rows={2}
-                    onChange={e => setEditProduct(p => ({ ...p, description: e.target.value }))}
-                    placeholder="תיאור קצר של הפריט"
-                    className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors resize-none" />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">מודל תמחור</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {PRICE_TYPES.map(pt => (
-                      <button key={pt.value} onClick={() => setEditProduct(p => ({ ...p, price_type: pt.value }))}
-                        className={`flex flex-col items-center gap-1 p-2.5 rounded-[14px] border-[1.5px] transition-all ${
-                          editProduct.price_type === pt.value ? 'bg-evo-elevated border-evo-purple-mid' : 'bg-white border-evo-border'
-                        }`}>
-                        <span className="text-lg">{pt.icon}</span>
-                        <span className={`text-[10px] font-bold text-center ${editProduct.price_type === pt.value ? 'text-evo-purple' : 'text-evo-text'}`}>{pt.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">מחיר (₪)</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-evo-muted font-bold text-sm">₪</span>
-                      <input type="number" value={editProduct.price}
-                        onChange={e => setEditProduct(p => ({ ...p, price: e.target.value }))}
-                        placeholder="0"
-                        className="w-full bg-white border-[1.5px] border-evo-border rounded-xl pl-7 pr-3 py-3 text-evo-text text-[14px] focus:outline-none focus:border-evo-purple-mid transition-colors" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">מקס. אורחים <span className="normal-case font-medium text-[10px]">· אופ׳</span></label>
-                    <input type="number" value={editProduct.max_guests}
-                      onChange={e => setEditProduct(p => ({ ...p, max_guests: e.target.value }))}
-                      placeholder="—"
-                      className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-3 py-3 text-evo-text text-[14px] focus:outline-none focus:border-evo-purple-mid transition-colors" />
-                  </div>
-                </div>
-
-                <button onClick={addProduct}
-                  disabled={!editProduct.name || !editProduct.price}
-                  className="w-full py-3 rounded-xl text-sm font-extrabold text-white transition-all disabled:opacity-30"
-                  style={{ background: '#2D1B8A' }}>
-                  <Plus size={14} className="inline mr-1.5" />הוסף מוצר
-                </button>
-              </div>
-
-              {products.length === 0 && (
-                <div className="flex items-center gap-3 py-3 px-4 bg-white rounded-[16px] border-[1.5px] border-evo-border">
-                  <span className="text-2xl">💡</span>
-                  <p className="text-xs text-evo-muted font-semibold leading-relaxed">
-                    ניתן לדלג ולהוסיף מוצרים בודדים בכל עת מהקטלוג שלך.
-                  </p>
-                </div>
-              )}
             </motion.div>
           )}
 

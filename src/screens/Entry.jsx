@@ -374,7 +374,7 @@ export default function Entry() {
         {/* Login — secondary */}
         <button
           onClick={() => resetAndGo('login')}
-          className="w-full py-3.5 text-evo-purple-mid text-base font-bold transition-all active:scale-[0.98] border-2 border-evo-purple-mid bg-transparent"
+          className="w-full py-3.5 text-evo-purple-mid text-base font-bold transition-all active:scale-[0.98] border-2 border-evo-purple-mid bg-transparent flex items-center justify-center"
           style={{ borderRadius: 14 }}
         >
           כבר יש לי חשבון — כניסה

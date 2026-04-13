@@ -316,13 +316,13 @@ export default function Profile() {
         {showLogoutConfirm && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-end"
+            className="fixed inset-0 bg-black/50 z-50 flex justify-center items-end"
             onClick={() => setShowLogoutConfirm(false)}
           >
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="w-full bg-white rounded-t-3xl p-6 pb-10"
+              className="w-full max-w-[430px] bg-white rounded-t-3xl p-6 pb-10"
               onClick={e => e.stopPropagation()}
             >
               <p className="text-evo-text text-lg font-bold mb-2 text-center">יציאה מהחשבון?</p>
@@ -351,11 +351,11 @@ export default function Profile() {
       <AnimatePresence>
         {showNotifications && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-end"
+            className="fixed inset-0 bg-black/50 z-50 flex justify-center items-end"
             onClick={() => setShowNotifications(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="w-full bg-white rounded-t-3xl p-6 pb-10"
+              className="w-full max-w-[430px] bg-white rounded-t-3xl p-6 pb-10"
               onClick={e => e.stopPropagation()}>
               <div className="w-10 h-1 bg-evo-border rounded-full mx-auto mb-5" />
               <p className="text-evo-text text-lg font-extrabold mb-1">התראות</p>
@@ -391,11 +391,11 @@ export default function Profile() {
       <AnimatePresence>
         {showAccount && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-end"
+            className="fixed inset-0 bg-black/50 z-50 flex justify-center items-end"
             onClick={() => setShowAccount(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="w-full bg-white rounded-t-3xl p-6 pb-10"
+              className="w-full max-w-[430px] bg-white rounded-t-3xl p-6 pb-10"
               onClick={e => e.stopPropagation()}>
               <div className="w-10 h-1 bg-evo-border rounded-full mx-auto mb-5" />
               <p className="text-evo-text text-lg font-extrabold mb-4">חשבון ואבטחה</p>
@@ -436,7 +436,7 @@ export default function Profile() {
       <AnimatePresence>
         {showHelp && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-end"
+            className="fixed inset-0 bg-black/50 z-50 flex justify-center items-end"
             onClick={() => setShowHelp(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}

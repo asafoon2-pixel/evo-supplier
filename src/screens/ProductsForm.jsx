@@ -1,7 +1,63 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Plus, X, Check } from 'lucide-react'
+import { ArrowLeft, Plus, X, Check, Image } from 'lucide-react'
 import { useSupplier } from '../context/SupplierContext'
+
+function compressImage(file, maxPx = 600, quality = 0.72) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onerror = () => resolve(null)
+    reader.onload = (ev) => {
+      const img = new window.Image()
+      img.onerror = () => resolve(null)
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxPx / Math.max(img.width, img.height))
+          const canvas = document.createElement('canvas')
+          canvas.width  = Math.round(img.width  * scale)
+          canvas.height = Math.round(img.height * scale)
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height)
+          resolve(canvas.toDataURL('image/jpeg', quality))
+        } catch { resolve(null) }
+      }
+      img.src = ev.target.result
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+function ProductImageUpload({ value, onChange }) {
+  const ref = useRef()
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const compressed = await compressImage(file)
+    onChange(compressed || null)
+  }
+  return (
+    <div>
+      <label className="text-xs font-bold text-evo-muted block mb-1.5 uppercase tracking-wider">
+        תמונת מוצר <span className="normal-case font-semibold text-evo-accent text-[10px]">· חובה</span>
+      </label>
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      {value ? (
+        <div className="relative h-28 rounded-[14px] overflow-hidden border-[1.5px] border-evo-green">
+          <img src={value} alt="" className="w-full h-full object-cover" />
+          <button onClick={() => { onChange(null); if (ref.current) ref.current.value = '' }}
+            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">
+            <X size={12} className="text-white" />
+          </button>
+        </div>
+      ) : (
+        <button onClick={() => ref.current?.click()}
+          className="w-full h-28 flex flex-col items-center justify-center gap-2 border-[2px] border-dashed border-evo-accent/40 rounded-[14px] bg-evo-elevated hover:border-evo-accent transition-all">
+          <Image size={20} className="text-evo-accent" />
+          <span className="text-xs font-bold text-evo-accent">הוסף תמונה — חובה</span>
+        </button>
+      )}
+    </div>
+  )
+}
 
 const PRICE_TYPES = [
   { value: 'fixed',     label: 'מחיר קבוע', icon: '📦' },
@@ -9,7 +65,7 @@ const PRICE_TYPES = [
   { value: 'per_guest', label: 'לאורח',     icon: '👥' },
 ]
 
-const EMPTY_PRODUCT = { name: '', description: '', price: '', price_type: 'fixed', max_guests: '', min_hours: '' }
+const EMPTY_PRODUCT = { name: '', description: '', price: '', price_type: 'fixed', max_guests: '', min_hours: '', image: null }
 
 export default function ProductsForm() {
   const { navigate, editPackage, saveProduct, vendorData } = useSupplier()
@@ -21,7 +77,7 @@ export default function ProductsForm() {
   const [saveError, setSaveError]     = useState('')
 
   const addProduct = () => {
-    if (!form.name || !form.price) return
+    if (!form.name || !form.price || !form.image) return
     setProductList(prev => [...prev, { ...form, id: `prod-${Date.now()}` }])
     setForm(EMPTY_PRODUCT)
     setShowForm(false)
@@ -65,10 +121,14 @@ export default function ProductsForm() {
           {productList.map(p => (
             <motion.div key={p.id}
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}
-              className="flex items-start gap-3 bg-white rounded-[16px] border-[1.5px] border-evo-border p-3.5 mb-3">
-              <div className="w-8 h-8 rounded-full bg-evo-elevated flex items-center justify-center shrink-0 mt-0.5">
-                <Check size={13} className="text-evo-purple" />
-              </div>
+              className="flex items-start gap-3 bg-white rounded-[16px] border-[1.5px] border-evo-green p-3.5 mb-3">
+              {p.image ? (
+                <img src={p.image} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-evo-elevated flex items-center justify-center shrink-0 mt-0.5">
+                  <Check size={13} className="text-evo-purple" />
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-evo-text truncate">{p.name}</p>
                 {p.description && <p className="text-xs text-evo-muted font-medium mt-0.5 line-clamp-2">{p.description}</p>}
@@ -107,6 +167,9 @@ export default function ProductsForm() {
                   <button onClick={() => setShowForm(false)} className="text-[10px] font-bold text-evo-muted">ביטול</button>
                 )}
               </div>
+
+              {/* Product image — required */}
+              <ProductImageUpload value={form.image} onChange={img => setForm(p => ({ ...p, image: img }))} />
 
               {/* Name */}
               <div>
@@ -164,7 +227,7 @@ export default function ProductsForm() {
                 </div>
               </div>
 
-              <button onClick={addProduct} disabled={!form.name || !form.price}
+              <button onClick={addProduct} disabled={!form.name || !form.price || !form.image}
                 className="w-full py-3 rounded-xl text-sm font-extrabold text-white transition-all disabled:opacity-30 active:scale-[0.98]"
                 style={{ background: '#2D1B8A' }}>
                 <Plus size={14} className="inline mr-1.5" />הוסף מוצר
@@ -196,6 +259,7 @@ export default function ProductsForm() {
                   price_type:   p.price_type,
                   min_hours:    parseInt(p.min_hours) || 0,
                   max_guests:   p.max_guests ? parseInt(p.max_guests) : 0,
+                  image_url:    p.image || null,
                   is_available: true,
                   sort_order:   i,
                 })

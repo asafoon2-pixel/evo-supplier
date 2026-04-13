@@ -106,7 +106,7 @@ function EditSheet({ pkg, onClose }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 z-50 flex items-end"
+      className="fixed inset-0 bg-black/50 z-50 flex justify-center items-end"
       onClick={onClose}
     >
       <motion.div
@@ -114,7 +114,7 @@ function EditSheet({ pkg, onClose }) {
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="w-full bg-white rounded-t-3xl border-t border-evo-border p-6 pb-10"
+        className="w-full max-w-[430px] bg-white rounded-t-3xl border-t border-evo-border p-6 pb-10"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
