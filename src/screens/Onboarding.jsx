@@ -507,6 +507,7 @@ export default function Onboarding() {
           await setDoc(doc(db, 'vendors', uid), {
             id:                    uid,
             business_name:         bizName,
+            slug:                  bizName.toLowerCase().replace(/[^a-z0-9֐-׿\s]/g, '').trim().replace(/\s+/g, '-') + '-' + uid.slice(-4),
             owner_full_name:       ownerName,
             category:              category,
             sub_category:          '',
@@ -1441,10 +1442,10 @@ export default function Onboarding() {
                 <p className="text-xs font-bold text-evo-muted mb-2 uppercase tracking-wider">לינק לפרופיל שלך</p>
                 <div className="flex items-center gap-2 bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3">
                   <span className="text-sm text-evo-accent font-bold flex-1 truncate">
-                    evo.co.il/{(bizName || 'your-profile').toLowerCase().replace(/\s+/g, '-')}
+                    app.evoevents.co?s={(bizName || 'your-profile').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-') + '-' + (auth.currentUser?.uid?.slice(-4) || '')}
                   </span>
                   <button className="text-xs font-extrabold text-evo-purple-mid bg-evo-elevated px-3 py-1.5 rounded-lg"
-                    onClick={() => navigator.clipboard?.writeText(`evo.co.il/${(bizName || 'your-profile').toLowerCase().replace(/\s+/g, '-')}`)}>
+                    onClick={() => navigator.clipboard?.writeText(`https://app.evoevents.co?s=${(bizName || 'your-profile').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-') + '-' + (auth.currentUser?.uid?.slice(-4) || '')}`)}>
                     העתק
                   </button>
                 </div>
