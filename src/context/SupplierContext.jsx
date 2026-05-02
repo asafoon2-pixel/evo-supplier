@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import {
   doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc,
-  collection, query, where, serverTimestamp, orderBy,
+  collection, query, where, serverTimestamp, orderBy, increment, onSnapshot,
 } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 
@@ -37,23 +37,43 @@ export function SupplierProvider({ children }) {
   const [activeEvent, setActiveEvent] = useState(null)
   const [editPackage, setEditPackage] = useState(null)
 
-  const TAB_SCREENS = ['home', 'calendar', 'events', 'catalog', 'profile']
+  const TAB_SCREENS = ['home', 'insights', 'calendar', 'events', 'catalog', 'profile']
   const navigate = (s) => { setScreen(s); if (TAB_SCREENS.includes(s)) setActiveTab(s) }
   const goTab    = (tab) => { setActiveTab(tab); setScreen(tab) }
 
   const acceptLead = async (id) => {
+    const lead = leads.find(l => l.id === id)
+    // Optimistic update
     setLeads(prev => prev.map(l => l.id === id ? { ...l, status: 'booked' } : l))
+    const revenue = lead?.order_total || 0
+    setVendorData(prev => prev ? {
+      ...prev,
+      total_events:  (prev.total_events  || 0) + 1,
+      total_revenue: (prev.total_revenue || 0) + revenue,
+    } : prev)
     try {
-      await updateDoc(doc(db, 'leads', id), { status: 'booked', updated_at: serverTimestamp() })
+      const uid = auth.currentUser?.uid
+      await Promise.all([
+        updateDoc(doc(db, 'leads', id), { status: 'booked', updated_at: serverTimestamp() }),
+        uid && updateDoc(doc(db, 'vendors', uid), {
+          total_events:  increment(1),
+          total_revenue: increment(revenue),
+          updated_at:    serverTimestamp(),
+        }),
+      ])
     } catch (err) {
       console.error('acceptLead Firestore error:', err)
     }
   }
 
-  const declineLead = async (id) => {
-    setLeads(prev => prev.map(l => l.id === id ? { ...l, status: 'declined' } : l))
+  const declineLead = async (id, reason = '') => {
+    setLeads(prev => prev.map(l => l.id === id ? { ...l, status: 'declined', decline_reason: reason } : l))
     try {
-      await updateDoc(doc(db, 'leads', id), { status: 'declined', updated_at: serverTimestamp() })
+      await updateDoc(doc(db, 'leads', id), {
+        status: 'declined',
+        decline_reason: reason,
+        updated_at: serverTimestamp(),
+      })
     } catch (err) {
       console.error('declineLead Firestore error:', err)
     }
@@ -107,16 +127,103 @@ export function SupplierProvider({ children }) {
     }
   }
 
-  // ── Load leads from Firestore ─────────────────────────────────
-  const loadLeads = async (uid) => {
-    try {
-      const q = query(collection(db, 'leads'), where('vendor_id', '==', uid))
-      const snap = await getDocs(q)
-      setLeads(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-    } catch (err) {
-      console.error('שגיאה בטעינת לידים:', err)
-      // Non-fatal — leads stay empty
+  // ── Normalize a raw Firestore lead doc to safe renderable shape ──
+  const normalizeLead = (id, data) => {
+    const toStr = (v) => {
+      if (v === null || v === undefined) return ''
+      if (typeof v === 'string') return v
+      if (typeof v === 'number') return String(v)
+      if (v?.toDate) return v.toDate().toLocaleDateString('he-IL') // Firestore Timestamp
+      return String(v)
     }
+    return {
+      id,
+      vendor_id:        data.vendor_id        || '',
+      client_id:        data.client_id        || '',
+      client_name:      data.client_name      || '',
+      client_email:     data.client_email     || '',
+      status:           data.status           || 'new',
+      category:         data.category         || '',
+      eventName:        data.eventName || data.name || 'האירוע שלי',
+      eventType:        toStr(data.eventType),
+      date:             toStr(data.date),
+      guestCount:       toStr(data.guestCount),
+      location:         toStr(data.location),
+      budgetRange:      toStr(data.budgetRange),
+      matchScore:       typeof data.matchScore === 'number' ? data.matchScore : 0,
+      heroImage:        data.heroImage        || '',
+      client_photo_url: data.client_photo_url || '',
+      tasteProfile:     Array.isArray(data.tasteProfile) ? data.tasteProfile : [],
+      evoNote:          data.evoNote          || '',
+      suggestedPackage: data.suggestedPackage || null,
+      suggestedPrice:   typeof data.suggestedPrice === 'number' ? data.suggestedPrice : null,
+      expiresIn:        data.expiresIn        || null,
+      order_items:      Array.isArray(data.order_items) ? data.order_items : [],
+      order_total:      typeof data.order_total === 'number' ? data.order_total : 0,
+    }
+  }
+
+  // ── Request browser notification permission ───────────────────
+  const requestNotificationPermission = () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }
+
+  const showLeadNotification = (lead) => {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return
+    new Notification('ליד חדש ב-EVO! 🎉', {
+      body: `${lead.client_name || 'לקוח'} מחפש ${lead.category || 'שירות'} לאירוע`,
+      icon: '/favicon.ico',
+    })
+  }
+
+  // ── Real-time leads listener ───────────────────────────────────
+  const listenLeads = (uid) => {
+    const q = query(collection(db, 'leads'), where('vendor_id', '==', uid))
+    const knownIds = new Set()
+    let isFirst = true
+
+    const unsub = onSnapshot(q, async (snap) => {
+      const normalized = snap.docs.map(d => normalizeLead(d.id, d.data()))
+
+      // Backfill client photos
+      const missingPhoto = normalized.filter(l => !l.client_photo_url && l.client_id)
+      const uniqueClientIds = [...new Set(missingPhoto.map(l => l.client_id))]
+      const photoMap = {}
+      await Promise.all(uniqueClientIds.map(async (clientId) => {
+        try {
+          const userSnap = await getDoc(doc(db, 'users', clientId))
+          if (userSnap.exists()) {
+            const data = userSnap.data()
+            photoMap[clientId] = data.photoURL || data.profile_photo_url || data.photo_url || ''
+          }
+        } catch {}
+      }))
+
+      const withPhotos = normalized.map(l =>
+        (!l.client_photo_url && photoMap[l.client_id])
+          ? { ...l, client_photo_url: photoMap[l.client_id] }
+          : l
+      )
+
+      // Show notification for new leads (not on first load)
+      if (!isFirst) {
+        withPhotos.forEach(lead => {
+          if (!knownIds.has(lead.id) && lead.status === 'new') {
+            showLeadNotification(lead)
+          }
+        })
+      }
+
+      withPhotos.forEach(l => knownIds.add(l.id))
+      isFirst = false
+      setLeads(withPhotos)
+    }, (err) => {
+      console.error('שגיאה בטעינת לידים:', err)
+    })
+
+    return unsub
   }
 
   // ── Retry loading after timeout/failure ──────────────────────
@@ -147,6 +254,8 @@ export function SupplierProvider({ children }) {
       max_guests:   parseInt(packageData.max_guests) || 0,
       min_hours:    parseInt(packageData.min_hours) || 0,
       is_popular:   packageData.is_popular || false,
+      badge:        packageData.badge ?? (packageData.is_popular ? 'most_popular' : null),
+      image_url:    packageData.image_url || null,
       is_available: packageData.is_available !== false,
       sort_order:   packageData.sort_order || 0,
       created_at:   packageData.created_at || serverTimestamp(),
@@ -156,9 +265,20 @@ export function SupplierProvider({ children }) {
 
     setPackages(prev => {
       const exists = prev.find(p => p.id === pkgId)
-      return exists
+      const updated = exists
         ? prev.map(p => p.id === pkgId ? payload : p)
         : [...prev, payload]
+
+      // Update _minPrice / _maxPrice on the vendor doc so the client can show price ranges
+      const prices = updated.filter(p => p.is_available !== false).map(p => parseFloat(p.price) || 0).filter(n => n > 0)
+      if (prices.length > 0) {
+        const minPrice = Math.min(...prices)
+        const maxPrice = Math.max(...prices)
+        updateDoc(doc(db, 'vendors', uid), { _minPrice: minPrice, _maxPrice: maxPrice }).catch(() => {})
+        setVendorData(prev => prev ? { ...prev, _minPrice: minPrice, _maxPrice: maxPrice } : prev)
+      }
+
+      return updated
     })
   }
 
@@ -166,7 +286,18 @@ export function SupplierProvider({ children }) {
     const uid = auth.currentUser?.uid
     if (!uid) throw new Error('לא מחובר')
     await deleteDoc(doc(db, 'vendors', uid, 'packages', packageId))
-    setPackages(prev => prev.filter(p => p.id !== packageId))
+    setPackages(prev => {
+      const updated = prev.filter(p => p.id !== packageId)
+      const prices = updated.filter(p => p.is_available !== false).map(p => parseFloat(p.price) || 0).filter(n => n > 0)
+      if (prices.length > 0) {
+        updateDoc(doc(db, 'vendors', uid), { _minPrice: Math.min(...prices), _maxPrice: Math.max(...prices) }).catch(() => {})
+        setVendorData(prev => prev ? { ...prev, _minPrice: Math.min(...prices), _maxPrice: Math.max(...prices) } : prev)
+      } else {
+        updateDoc(doc(db, 'vendors', uid), { _minPrice: null, _maxPrice: null }).catch(() => {})
+        setVendorData(prev => prev ? { ...prev, _minPrice: null, _maxPrice: null } : prev)
+      }
+      return updated
+    })
   }
 
   // ── Product CRUD ──────────────────────────────────────────────
@@ -292,9 +423,10 @@ export function SupplierProvider({ children }) {
           }
 
           if (hasDoc === true) {
-            // Load events + leads in background (non-blocking)
+            // Load events in background, start real-time leads listener
             loadEvents(firebaseUser.uid).catch(() => {})
-            loadLeads(firebaseUser.uid).catch(() => {})
+            listenLeads(firebaseUser.uid)
+            requestNotificationPermission()
             setScreen('home')
             setActiveTab('home')
           } else if (loadError) {
