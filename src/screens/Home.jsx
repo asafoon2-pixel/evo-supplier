@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion'
-import { ArrowLeft, Clock, ChevronLeft, RefreshCw, Bell } from 'lucide-react'
+import { ArrowLeft, Clock, ChevronLeft, RefreshCw, Bell, BarChart2 } from 'lucide-react'
 import { useSupplier } from '../context/SupplierContext'
 import { LangToggle } from '../context/LanguageContext'
+import EvoLogo from '../components/EvoLogo'
 
 const f = (i) => ({
   initial:    { opacity: 0, y: 16 },
@@ -52,6 +53,12 @@ export default function Home() {
 
         <div className="relative flex items-center justify-between mb-6">
           <LangToggle />
+
+          {/* EVO Logo — centered */}
+          <div className="absolute left-1/2 -translate-x-1/2">
+            <EvoLogo height={36} />
+          </div>
+
           <button className="w-9 h-9 rounded-full flex items-center justify-center"
             style={{ background: 'rgba(255,255,255,0.15)' }}>
             <Bell size={18} color="white" />
@@ -102,7 +109,7 @@ export default function Home() {
       )}
 
       {/* ── Stats row ───────────────────────────────────────── */}
-      <div className="px-5 mt-5 flex gap-3">
+      <div className="px-5 mt-5 flex gap-3 items-stretch">
         <StatCard label="אירועים" value={totalEvents} sub="עד היום"
           bg="linear-gradient(135deg,#6B5FE4,#3D2B7A)" textColor="#fff" delay={1} />
         <StatCard label="לידים חדשים" value={newLeads.length} sub="ממתינים"
@@ -110,6 +117,20 @@ export default function Home() {
         <StatCard label="חבילות" value={packages.length} sub="קטלוג שלי"
           bg="linear-gradient(135deg,#E8B86D,#E8A030)" textColor="#5C3D00" delay={3} />
       </div>
+
+      {/* ── Insights shortcut ───────────────────────────────── */}
+      <motion.div {...f(4)} className="px-5 mt-3">
+        <button onClick={() => navigate('insights')}
+          className="w-full rounded-card p-4 flex items-center gap-3 transition-all active:scale-[0.98]"
+          style={{ background: 'rgba(107,95,228,0.08)', border: '1.5px solid rgba(107,95,228,0.2)' }}>
+          <div className="w-9 h-9 rounded-[12px] flex items-center justify-center shrink-0"
+            style={{ background: 'rgba(107,95,228,0.15)' }}>
+            <BarChart2 size={17} style={{ color: '#6B5FE4' }} />
+          </div>
+          <p className="flex-1 text-right text-sm font-bold text-evo-accent">צפה בתובנות וסטטיסטיקות</p>
+          <ArrowLeft size={15} style={{ color: '#6B5FE4' }} className="shrink-0" />
+        </button>
+      </motion.div>
 
       {/* ── New leads alert ─────────────────────────────────── */}
       {newLeads.length > 0 && (
@@ -174,8 +195,8 @@ export default function Home() {
                 className="shrink-0 w-52 rounded-card overflow-hidden text-right transition-all active:scale-[0.97]"
                 style={{ background: '#FDFAF5', boxShadow: '0 4px 20px rgba(44,32,22,0.1)' }}
               >
-                <div className="h-28 relative overflow-hidden">
-                  <img src={evt.heroImage} alt="" className="w-full h-full object-cover" />
+                <div className="h-28 relative overflow-hidden bg-gradient-to-br from-[#3D2B7A] to-[#6B5FE4]">
+                  {evt.heroImage && <img src={evt.heroImage} alt="" className="w-full h-full object-cover" />}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/65 to-transparent" />
                   <div className="absolute bottom-2.5 right-3">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-pill text-[10px] font-bold"

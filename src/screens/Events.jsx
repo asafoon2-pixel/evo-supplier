@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronRight, Zap } from 'lucide-react'
 import { useSupplier } from '../context/SupplierContext'
+import EvoLogo from '../components/EvoLogo'
 
 const EVENT_STATUS = {
   confirmed:     { label: 'מאושר',    color: 'text-evo-green bg-evo-green/10 border-evo-green/30' },
@@ -29,6 +30,8 @@ export default function Events() {
     ? events.filter(e => e.status !== 'completed')
     : events.filter(e => e.status === 'completed')
 
+  const bookedLeads = leads.filter(l => l.status === 'booked')
+
   const filteredLeads = leadFilter === 'all'
     ? leads
     : leads.filter(l => l.status === leadFilter)
@@ -37,6 +40,7 @@ export default function Events() {
     <div className="w-full bg-evo-bg pb-8">
       {/* Header */}
       <div className="px-6 pt-5 pb-4 bg-white border-b border-evo-border">
+        <div className="mb-2"><EvoLogo height={20} variant="light" /></div>
         <h1 className="text-[22px] font-extrabold text-evo-text" style={{ letterSpacing: '-0.5px' }}>
           {mainTab === 'events' ? 'אירועים' : 'לידים'}
         </h1>
@@ -87,8 +91,8 @@ export default function Events() {
                   onClick={() => { setActiveEvent(evt); navigate('eventDetail') }}
                   className="w-full bg-white rounded-[20px] border-[1.5px] border-evo-border overflow-hidden text-start hover:border-evo-dim transition-all active:scale-[0.99]"
                   style={{ boxShadow: 'rgba(45,27,105,0.08) 0px 2px 12px' }}>
-                  <div className="relative h-32 overflow-hidden">
-                    <img src={evt.heroImage} alt="" className="w-full h-full object-cover" />
+                  <div className="relative h-32 overflow-hidden bg-gradient-to-br from-[#2D1B8A] to-[#6B5FE4]">
+                    {evt.heroImage && <img src={evt.heroImage} alt="" className="w-full h-full object-cover" />}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
                     <div className="absolute top-3 right-3">
                       <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border-[1.5px] ${s.color}`}>{s.label}</span>
@@ -106,7 +110,7 @@ export default function Events() {
                       <p className="text-evo-muted text-xs font-medium mt-1">{evt.eventType} · {evt.date}</p>
                       <p className="text-evo-muted text-xs mt-0.5">{evt.location}</p>
                       <div className="flex items-center gap-3 mt-2">
-                        <span className="text-evo-accent text-sm font-bold">₪{evt.totalValue.toLocaleString()}</span>
+                        <span className="text-evo-accent text-sm font-bold">{evt.totalValue ? `₪${evt.totalValue.toLocaleString()}` : ''}</span>
                         <span className="text-evo-muted text-xs">חבילת {evt.packageName}</span>
                       </div>
                     </div>
@@ -115,7 +119,48 @@ export default function Events() {
                 </motion.button>
               )
             })}
-            {filteredEvents.length === 0 && (
+
+            {/* Booked leads shown in active filter */}
+            {evtFilter === 'active' && bookedLeads.map((lead, i) => (
+              <motion.button key={`lead-${lead.id}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: (filteredEvents.length + i) * 0.06 }}
+                onClick={() => { setActiveLead(lead); navigate('leadDetail') }}
+                className="w-full bg-white rounded-[20px] border-[1.5px] border-evo-green/40 overflow-hidden text-start hover:border-evo-green/60 transition-all active:scale-[0.99]"
+                style={{ boxShadow: 'rgba(74,158,114,0.12) 0px 2px 12px' }}>
+                <div className="relative h-32 overflow-hidden bg-gradient-to-br from-[#1A6940] to-[#4A9E72]">
+                  {lead.client_photo_url
+                    ? <img src={lead.client_photo_url} alt="" className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-white text-5xl font-bold opacity-30">
+                          {lead.client_name?.[0]?.toUpperCase() || '?'}
+                        </span>
+                      </div>
+                  }
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                  <div className="absolute top-3 right-3">
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full border-[1.5px] text-evo-green bg-evo-green/10 border-evo-green/30">
+                      הוזמן ✓
+                    </span>
+                  </div>
+                </div>
+                <div className="p-4 flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-evo-text text-sm font-bold leading-tight truncate">{lead.client_name}</p>
+                    <p className="text-evo-muted text-xs font-medium mt-1">{lead.eventType} · {lead.date}</p>
+                    <p className="text-evo-muted text-xs mt-0.5">{lead.location}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="text-evo-accent text-sm font-bold">
+                        {lead.order_total ? `₪${Number(lead.order_total).toLocaleString()}` : ''}
+                      </span>
+                      <span className="text-evo-muted text-xs">{lead.guestCount ? `${lead.guestCount} אורחים` : ''}</span>
+                    </div>
+                  </div>
+                  <ChevronRight size={16} className="text-evo-dim shrink-0 mt-1" />
+                </div>
+              </motion.button>
+            ))}
+
+            {filteredEvents.length === 0 && (evtFilter !== 'active' || bookedLeads.length === 0) && (
               <div className="text-center py-16">
                 <p className="text-3xl mb-3">📅</p>
                 <p className="text-evo-text text-sm font-semibold mb-1">עדיין אין אירועים</p>
@@ -157,8 +202,8 @@ export default function Events() {
                   className="w-full rounded-[20px] border-[1.5px] border-evo-border bg-white overflow-hidden text-start hover:border-evo-dim transition-all active:scale-[0.99]"
                   style={{ boxShadow: 'rgba(45,27,105,0.08) 0px 2px 12px' }}>
 
-                  <div className="relative h-36 overflow-hidden">
-                    <img src={lead.heroImage} alt="" className="w-full h-full object-cover" />
+                  <div className="relative h-36 overflow-hidden bg-gradient-to-br from-[#2D1B8A] to-[#6B5FE4]">
+                    {lead.heroImage && <img src={lead.heroImage} alt="" className="w-full h-full object-cover" />}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                     <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/50 backdrop-blur-sm rounded-full px-3 py-1.5">
                       <Zap size={11} className="text-evo-accent" />
@@ -190,7 +235,7 @@ export default function Events() {
                       )}
                     </div>
                     <div className="flex gap-1.5 mt-3 flex-wrap">
-                      {lead.tasteProfile.map(tag => (
+                      {(lead.tasteProfile || []).map(tag => (
                         <span key={tag} className="text-[10px] font-semibold text-evo-purple bg-evo-elevated border-[1.5px] border-evo-dim rounded-full px-2.5 py-1">{tag}</span>
                       ))}
                     </div>

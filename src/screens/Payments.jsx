@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion'
 import { Handshake, CreditCard, Clock } from 'lucide-react'
+import EvoLogo from '../components/EvoLogo'
 
 export default function Payments() {
   return (
     <div className="w-full bg-evo-bg pb-8">
       {/* Header */}
       <div className="px-6 pt-14 pb-4 bg-white border-b border-evo-border">
-        <p className="text-xs font-bold tracking-[0.25em] uppercase text-evo-accent mb-1">EVO</p>
+        <div className="mb-2"><EvoLogo height={20} variant="light" /></div>
         <h1 className="text-[22px] font-extrabold text-evo-text" style={{ letterSpacing: '-0.5px' }}>תשלומים</h1>
         <p className="text-evo-muted text-sm mt-1">בחר את אופן התשלום המתאים לך</p>
       </div>

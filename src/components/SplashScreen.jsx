@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import EvoLogo from './EvoLogo'
 
 // ── Illustrated floating icons (inline SVG) ───────────────
 const ICONS = [
@@ -103,7 +104,7 @@ export default function SplashScreen() {
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: '#F5F0E8' }}
+      style={{ background: 'linear-gradient(160deg, #1A0E4F 0%, #0E0635 100%)' }}
       initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -135,33 +136,18 @@ export default function SplashScreen() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
       >
-        {/* Logo mark */}
-        <div
-          className="flex items-center justify-center"
-          style={{
-            width: 120, height: 120,
-            borderRadius: 32,
-            background: 'linear-gradient(145deg, #6B5FE4, #3D2B7A)',
-            boxShadow: '0 16px 48px rgba(107,95,228,0.4)',
-          }}
-        >
-          <span className="text-white text-4xl font-black tracking-tight"
-            style={{ fontFamily: 'Poppins, sans-serif', letterSpacing: '-1px' }}>
-            EVO
-          </span>
-        </div>
+        {/* EVO wordmark — official brand mark */}
+        <EvoLogo height={52} />
 
         {/* Tagline */}
-        <motion.div
-          className="text-center"
+        <motion.p
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.5 }}
+          style={{ fontSize: 11, letterSpacing: '0.28em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}
         >
-          <p className="text-sm font-semibold" style={{ color: '#7A6E5F', letterSpacing: '0.08em' }}>
-            פלטפורמת ספקי האירועים
-          </p>
-        </motion.div>
+          פלטפורמת ספקי האירועים
+        </motion.p>
       </motion.div>
     </motion.div>
   )

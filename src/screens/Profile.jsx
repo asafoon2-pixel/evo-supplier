@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Star, MapPin, Clock, Award, ChevronRight, LogOut, Shield, Bell, HelpCircle, Camera, Pencil, Check, X, ChevronDown, MessageCircle, Mail } from 'lucide-react'
+import { Star, MapPin, Clock, Award, ChevronRight, LogOut, Shield, Bell, HelpCircle, Camera, Pencil, Check, X, ChevronDown, MessageCircle, Mail, Globe, Instagram } from 'lucide-react'
 import { sendPasswordResetEmail } from 'firebase/auth'
 import { auth } from '../firebase'
 import { useSupplier } from '../context/SupplierContext'
+import EvoLogo from '../components/EvoLogo'
 
 function compressImage(file, maxPx = 400, quality = 0.65) {
   return new Promise((resolve) => {
@@ -135,6 +136,10 @@ export default function Profile() {
   const website     = vendorData?.website_url || ''
   const avatarUrl   = vendorData?.profile_photo_url || null
   const verStatus   = vendorData?.verification_status || 'pending'
+  const slug        = vendorData?.slug || (vendorData?.id
+    ? (vendorData.business_name || 'my-profile').toLowerCase().replace(/[^a-z0-9\s]/g, '').trim().replace(/\s+/g, '-') + '-' + vendorData.id.slice(-4)
+    : null)
+  const profileLink = slug ? `https://app.evoevents.co?s=${slug}` : null
   const isVerified  = verStatus === 'approved'
   const avgRating   = vendorData?.avg_rating || 0
   const totalReviews = vendorData?.total_reviews || 0
@@ -151,6 +156,9 @@ export default function Profile() {
       {/* Cover */}
       <div className="relative h-36 bg-gradient-to-br from-[#2D1B8A] to-[#6C5CE7]">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
+        <div className="absolute top-4 left-1/2 -translate-x-1/2">
+          <EvoLogo height={36} />
+        </div>
       </div>
 
       {/* Avatar — straddles the cover */}
@@ -215,7 +223,40 @@ export default function Profile() {
               <span>{avgRating.toFixed(1)} ({totalReviews})</span>
             </div>
           )}
+          {instagram && (
+            <a href={`https://instagram.com/${instagram.replace('@','')}`} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1.5 text-xs" style={{ color: '#E1306C' }}>
+              <Instagram size={11} />
+              <span>@{instagram.replace('@','')}</span>
+            </a>
+          )}
+          {website && (
+            <a href={website.startsWith('http') ? website : `https://${website}`} target="_blank" rel="noreferrer"
+              className="flex items-center gap-1.5 text-evo-muted text-xs">
+              <Globe size={11} />
+              <span>{website.replace(/^https?:\/\//, '')}</span>
+            </a>
+          )}
         </div>
+
+        {/* Personal profile link */}
+        {profileLink && (
+          <div className="mb-4 rounded-[16px] border-[1.5px] border-evo-border p-3"
+            style={{ background: 'rgba(107,95,228,0.05)' }}>
+            <p className="text-[10px] font-bold text-evo-muted uppercase tracking-wider mb-2">הלינק האישי שלך</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold flex-1 truncate" style={{ color: '#6B5FE4' }}>
+                app.evoevents.co?s={slug}
+              </span>
+              <button
+                onClick={() => { navigator.clipboard?.writeText(profileLink); }}
+                className="text-[10px] font-extrabold px-3 py-1.5 rounded-lg shrink-0"
+                style={{ background: 'rgba(107,95,228,0.12)', color: '#6B5FE4' }}>
+                העתק
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-4 flex items-center justify-around mb-5"
@@ -305,6 +346,7 @@ export default function Profile() {
           <MenuItem icon={Bell} label="התראות" sublabel="לידים, בריפים, תשלומים" onPress={() => setShowNotifications(true)} />
           <MenuItem icon={Shield} label="חשבון ואבטחה" sublabel="סיסמה, אימייל" onPress={() => setShowAccount(true)} />
           <MenuItem icon={HelpCircle} label="עזרה ותמיכה" sublabel="שאלות נפוצות, יצירת קשר עם EVO" onPress={() => setShowHelp(true)} />
+          <MenuItem icon={Award} label="Database Agent" sublabel="עדכון וסנכרון נתוני Firestore" onPress={() => navigate('dbAgent')} />
           <MenuItem icon={LogOut} label="יציאה" danger onPress={() => setShowLogoutConfirm(true)} />
         </div>
 

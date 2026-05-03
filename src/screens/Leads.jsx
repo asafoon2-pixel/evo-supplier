@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Zap } from 'lucide-react'
 import { useSupplier } from '../context/SupplierContext'
+import EvoLogo from '../components/EvoLogo'
 
 const FILTERS = [
   { id: 'all',     label: 'All' },
@@ -26,6 +27,7 @@ export default function Leads() {
   return (
     <div className="w-full bg-evo-bg pb-8 overflow-y-auto">
       <div className="px-6 pt-12 pb-5 bg-white border-b border-evo-border">
+        <div className="mb-2"><EvoLogo height={20} variant="light" /></div>
         <h1 className="text-[22px] font-extrabold text-evo-text" style={{ letterSpacing: '-0.5px' }}>Leads</h1>
         <p className="text-evo-muted text-sm mt-1">EVO-matched events for your profile</p>
       </div>
