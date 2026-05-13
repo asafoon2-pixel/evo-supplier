@@ -422,7 +422,21 @@ export function SupplierProvider({ children }) {
             loadError = true
           }
 
-          if (hasDoc === true) {
+          // Always check admin first, regardless of vendor doc
+          let adminFound = false
+          try {
+            const [userSnap, vendorDocSnap] = await Promise.all([
+              getDoc(doc(db, 'users', firebaseUser.uid)),
+              getDoc(doc(db, 'vendors', firebaseUser.uid)),
+            ])
+            adminFound =
+              (userSnap.exists()     && userSnap.data().is_admin     === true) ||
+              (vendorDocSnap.exists() && vendorDocSnap.data().is_admin === true)
+          } catch {}
+
+          if (adminFound) {
+            setScreen('admin')
+          } else if (hasDoc === true) {
             // Load events in background, start real-time leads listener
             loadEvents(firebaseUser.uid).catch(() => {})
             listenLeads(firebaseUser.uid)
@@ -434,21 +448,7 @@ export function SupplierProvider({ children }) {
             setScreen('home')
             setActiveTab('home')
           } else {
-            // hasDoc === false means no vendor doc — check if admin before onboarding
-            try {
-              const userSnap = await getDoc(doc(db, 'users', firebaseUser.uid))
-              const vendorSnap = await getDoc(doc(db, 'vendors', firebaseUser.uid))
-              const adminFound =
-                (userSnap.exists()   && userSnap.data().is_admin   === true) ||
-                (vendorSnap.exists() && vendorSnap.data().is_admin === true)
-              if (adminFound) {
-                setScreen('admin')
-              } else {
-                setScreen('onboarding')
-              }
-            } catch {
-              setScreen('onboarding')
-            }
+            setScreen('onboarding')
           }
         } else {
           setVendorData(null)
