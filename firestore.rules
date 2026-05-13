@@ -2,6 +2,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Admin check ────────────────────────────────────────────
+    function isAdmin() {
+      return request.auth != null && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.is_admin == true)
+        ||
+        (exists(/databases/$(database)/documents/vendors/$(request.auth.uid))
+          && get(/databases/$(database)/documents/vendors/$(request.auth.uid)).data.is_admin == true)
+      );
+    }
+
     // ── Admin-only fields that clients may never update ────────
     function noAdminFieldsChanged() {
       return !request.resource.data.diff(resource.data).affectedKeys()
@@ -84,16 +95,17 @@ service cloud.firestore {
 
     // ── Events collection ──────────────────────────────────────
     match /events/{eventId} {
-      allow read, write: if request.auth != null && resource.data.user_id == request.auth.uid;
+      allow read: if isAdmin() || (request.auth != null && resource.data.user_id == request.auth.uid);
+      allow write: if request.auth != null && resource.data.user_id == request.auth.uid;
       allow create: if request.auth != null;
     }
 
     // ── Leads collection ───────────────────────────────────────
     match /leads/{leadId} {
-      // Both client and vendor can read their own leads
-      allow read: if request.auth != null
+      // Both client and vendor can read their own leads; admin can read all
+      allow read: if isAdmin() || (request.auth != null
         && (resource.data.vendor_id == request.auth.uid
-            || resource.data.client_id == request.auth.uid);
+            || resource.data.client_id == request.auth.uid));
 
       // Authenticated clients can create leads
       allow create: if request.auth != null;

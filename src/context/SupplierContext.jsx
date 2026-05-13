@@ -437,7 +437,11 @@ export function SupplierProvider({ children }) {
             // hasDoc === false means no vendor doc — check if admin before onboarding
             try {
               const userSnap = await getDoc(doc(db, 'users', firebaseUser.uid))
-              if (userSnap.exists() && userSnap.data().is_admin === true) {
+              const vendorSnap = await getDoc(doc(db, 'vendors', firebaseUser.uid))
+              const adminFound =
+                (userSnap.exists()   && userSnap.data().is_admin   === true) ||
+                (vendorSnap.exists() && vendorSnap.data().is_admin === true)
+              if (adminFound) {
                 setScreen('admin')
               } else {
                 setScreen('onboarding')

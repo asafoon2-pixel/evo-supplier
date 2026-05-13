@@ -409,9 +409,15 @@ export default function AdminDashboard() {
       const uid = auth.currentUser?.uid
       if (!uid) throw new Error('לא מחובר')
 
-      // Check admin from users collection
-      const userDoc = await getDoc(doc(db, 'users', uid))
-      if (!userDoc.exists() || userDoc.data().is_admin !== true) {
+      // Check admin from users or vendors collection
+      const [userDoc, vendorDoc] = await Promise.all([
+        getDoc(doc(db, 'users', uid)),
+        getDoc(doc(db, 'vendors', uid)),
+      ])
+      const adminFound =
+        (userDoc.exists()   && userDoc.data().is_admin   === true) ||
+        (vendorDoc.exists() && vendorDoc.data().is_admin === true)
+      if (!adminFound) {
         setIsAdmin(false)
         setLoading(false)
         return
