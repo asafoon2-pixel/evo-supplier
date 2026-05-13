@@ -224,7 +224,7 @@ export default function PackageForm() {
   const [pkgTypeName,    setPkgTypeName]    = useState(isEdit ? (editPackage.name || '') : '')
   const [pkgDesc,        setPkgDesc]        = useState(isEdit ? (editPackage.description || '') : '')
   const [pkgPrice,       setPkgPrice]       = useState(isEdit ? String(editPackage.price || '') : '')
-  const [pkgPriceType,   setPkgPriceType]   = useState('fixed')
+  const [pkgPriceType,   setPkgPriceType]   = useState(isEdit ? (editPackage.price_type || 'fixed') : 'fixed')
   const [pkgMinGuests,   setPkgMinGuests]   = useState(isEdit ? (editPackage.minGuests || 50) : 50)
   const [pkgMaxGuests,   setPkgMaxGuests]   = useState(isEdit ? (editPackage.maxGuests || 200) : 200)
   const [pkgMinHours,    setPkgMinHours]    = useState(3)
@@ -480,6 +480,8 @@ export default function PackageForm() {
                 max_guests:   pkgMaxGuests,
                 min_hours:    pkgMinHours,
                 is_popular:   pkgBadge === 'most_popular',
+                badge:        pkgBadge || null,
+                image_url:    pkgImage || null,
                 is_available: true,
                 sort_order:   isEdit ? (editPackage.sort_order || 0) : 0,
               })

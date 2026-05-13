@@ -93,6 +93,24 @@ export function IconProfile({ active, size = 24 }) {
   )
 }
 
+export function IconInsights({ active, size = 24 }) {
+  const c = active ? '#6B5FE4' : '#7A6E5F'
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="13" width="4" height="8" rx="1"
+        stroke={c} strokeWidth="2"
+        fill={active ? 'rgba(107,95,228,0.2)' : 'none'}/>
+      <rect x="10" y="8" width="4" height="13" rx="1"
+        stroke={c} strokeWidth="2"
+        fill={active ? 'rgba(107,95,228,0.15)' : 'none'}/>
+      <rect x="17" y="3" width="4" height="18" rx="1"
+        stroke={c} strokeWidth="2"
+        fill={active ? 'rgba(107,95,228,0.12)' : 'none'}/>
+      {active && <circle cx="5" cy="11" r="1.5" fill="#E8B86D"/>}
+    </svg>
+  )
+}
+
 // ── Status icons ──────────────────────────────────────────
 export function IconConfirmed({ size = 20 }) {
   return (

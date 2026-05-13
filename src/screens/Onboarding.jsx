@@ -325,6 +325,44 @@ function PhotoUpload({ label, hint, value, onChange, aspect = 'square' }) {
   )
 }
 
+function MultiPhotoUpload({ label, hint, images, onChange }) {
+  const ref = useRef()
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (ref.current) ref.current.value = ''
+    const compressed = await compressImage(file)
+    const result = compressed || await readFileAsDataURL(file).catch(() => null)
+    if (result) onChange([...images, result])
+  }
+  const remove = (i) => onChange(images.filter((_, idx) => idx !== i))
+  return (
+    <div>
+      <label className="text-xs font-bold text-evo-muted block mb-1.5 uppercase tracking-wider">{label}</label>
+      {hint && <p className="text-xs text-evo-muted font-medium mb-2">{hint}</p>}
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      <div className="flex gap-2 flex-wrap">
+        {images.map((img, i) => (
+          <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border-[1.5px] border-evo-purple-mid shrink-0">
+            <img src={img} alt="" className="w-full h-full object-cover" />
+            <button onClick={() => remove(i)}
+              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center">
+              <X size={10} className="text-white" />
+            </button>
+          </div>
+        ))}
+        {images.length < 6 && (
+          <button onClick={() => ref.current?.click()}
+            className="w-20 h-20 flex flex-col items-center justify-center gap-1 border-[2px] border-dashed border-evo-dim rounded-xl bg-evo-elevated hover:border-evo-purple-mid transition-all shrink-0">
+            <ImageIcon size={16} className="text-evo-muted" />
+            <span className="text-[10px] font-bold text-evo-muted">הוסף</span>
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function TemplateField({ field, value, onChange }) {
   if (field.type === 'toggle') {
     const on = value === true
@@ -428,7 +466,7 @@ export default function Onboarding() {
 
   // Step 4: Products (now before package)
   const [products, setProducts] = useState([])
-  const [editProduct, setEditProduct] = useState({ name: '', description: '', price: '', price_type: 'fixed', max_guests: '', image: null })
+  const [editProduct, setEditProduct] = useState({ name: '', description: '', price: '', price_type: 'fixed', max_guests: '', images: [] })
   const [dragProductId, setDragProductId] = useState(null)
 
   // Step 6: Pricing rules
@@ -476,9 +514,9 @@ export default function Onboarding() {
   const appendBio = (hint) => setBio(prev => prev ? prev + ' ' + hint : hint)
 
   const addProduct = () => {
-    if (!editProduct.name || !editProduct.price || !editProduct.image) return
+    if (!editProduct.name || !editProduct.price || editProduct.images.length === 0) return
     setProducts(prev => [...prev, { ...editProduct, id: Date.now() }])
-    setEditProduct({ name: '', description: '', price: '', price_type: 'fixed', max_guests: '', image: null })
+    setEditProduct({ name: '', description: '', price: '', price_type: 'fixed', max_guests: '', images: [] })
   }
 
   const removeProduct = (id) => setProducts(prev => prev.filter(p => p.id !== id))
@@ -584,7 +622,8 @@ export default function Onboarding() {
               price_type:   p.price_type || 'fixed',
               min_hours:    0,
               max_guests:   p.max_guests ? parseInt(p.max_guests) : 0,
-              image_url:    p.image || null,
+              image_url:    p.images?.[0] || null,
+              image_urls:   p.images || [],
               is_available: true,
               sort_order:   i,
               created_at:   serverTimestamp(),
@@ -853,8 +892,8 @@ export default function Onboarding() {
                 <div className="space-y-2">
                   {products.map(p => (
                     <div key={p.id} className="flex items-start gap-3 bg-white rounded-[16px] border-[1.5px] border-evo-green p-3.5">
-                      {p.image && (
-                        <img src={p.image} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                      {p.images?.[0] && (
+                        <img src={p.images[0]} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
                       )}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-evo-text truncate">{p.name}</p>
@@ -878,13 +917,12 @@ export default function Onboarding() {
               <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-4 space-y-4">
                 <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">הוסף מוצר</p>
 
-                {/* Product image — REQUIRED */}
-                <PhotoUpload
-                  label="תמונת מוצר"
-                  hint="חובה — תמונה ברורה של המוצר"
-                  value={editProduct.image}
-                  onChange={img => setEditProduct(p => ({ ...p, image: img }))}
-                  aspect="landscape"
+                {/* Product images — REQUIRED */}
+                <MultiPhotoUpload
+                  label="תמונות מוצר"
+                  hint="חובה — לפחות תמונה אחת, עד 6"
+                  images={editProduct.images}
+                  onChange={imgs => setEditProduct(p => ({ ...p, images: imgs }))}
                 />
 
                 <InputField label="שם המוצר" value={editProduct.name}
@@ -935,7 +973,7 @@ export default function Onboarding() {
                 </div>
 
                 <button onClick={addProduct}
-                  disabled={!editProduct.name || !editProduct.price || !editProduct.image}
+                  disabled={!editProduct.name || !editProduct.price || editProduct.images.length === 0}
                   className="w-full py-3 rounded-xl text-sm font-extrabold text-white transition-all disabled:opacity-30"
                   style={{ background: '#2D1B8A' }}>
                   <Plus size={14} className="inline mr-1.5" />הוסף מוצר

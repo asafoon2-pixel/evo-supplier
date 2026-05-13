@@ -2,11 +2,11 @@ import { useSupplier } from '../context/SupplierContext'
 import { IconHome, IconCalendar, IconEvents, IconCatalog, IconProfile } from './Icons'
 
 const TABS = [
-  { id: 'home',     labelHe: 'בית',      labelEn: 'Home',     Icon: IconHome },
-  { id: 'calendar', labelHe: 'לוח שנה',  labelEn: 'Calendar', Icon: IconCalendar },
-  { id: 'events',   labelHe: 'אירועים',  labelEn: 'Events',   Icon: IconEvents },
-  { id: 'catalog',  labelHe: 'קטלוג',    labelEn: 'Catalog',  Icon: IconCatalog },
-  { id: 'profile',  labelHe: 'פרופיל',   labelEn: 'Profile',  Icon: IconProfile },
+  { id: 'home',     labelHe: 'בית',      Icon: IconHome },
+  { id: 'calendar', labelHe: 'לוח שנה',  Icon: IconCalendar },
+  { id: 'events',   labelHe: 'אירועים',  Icon: IconEvents },
+  { id: 'catalog',  labelHe: 'קטלוג',    Icon: IconCatalog },
+  { id: 'profile',  labelHe: 'פרופיל',   Icon: IconProfile },
 ]
 
 export default function TabBar() {

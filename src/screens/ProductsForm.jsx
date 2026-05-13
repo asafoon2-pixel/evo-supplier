@@ -26,35 +26,42 @@ function compressImage(file, maxPx = 600, quality = 0.72) {
   })
 }
 
-function ProductImageUpload({ value, onChange }) {
+const MAX_IMAGES = 6
+
+function ProductImagesUpload({ images, onChange }) {
   const ref = useRef()
   const handleFile = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
+    if (ref.current) ref.current.value = ''
     const compressed = await compressImage(file)
-    onChange(compressed || null)
+    if (compressed) onChange([...images, compressed])
   }
+  const remove = (i) => onChange(images.filter((_, idx) => idx !== i))
   return (
     <div>
       <label className="text-xs font-bold text-evo-muted block mb-1.5 uppercase tracking-wider">
-        תמונת מוצר <span className="normal-case font-semibold text-evo-accent text-[10px]">· חובה</span>
+        תמונות מוצר <span className="normal-case font-semibold text-evo-accent text-[10px]">· חובה לפחות אחת (עד {MAX_IMAGES})</span>
       </label>
       <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile} />
-      {value ? (
-        <div className="relative h-28 rounded-[14px] overflow-hidden border-[1.5px] border-evo-green">
-          <img src={value} alt="" className="w-full h-full object-cover" />
-          <button onClick={() => { onChange(null); if (ref.current) ref.current.value = '' }}
-            className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">
-            <X size={12} className="text-white" />
+      <div className="flex gap-2 flex-wrap">
+        {images.map((img, i) => (
+          <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border-[1.5px] border-evo-green shrink-0">
+            <img src={img} alt="" className="w-full h-full object-cover" />
+            <button onClick={() => remove(i)}
+              className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 flex items-center justify-center">
+              <X size={10} className="text-white" />
+            </button>
+          </div>
+        ))}
+        {images.length < MAX_IMAGES && (
+          <button onClick={() => ref.current?.click()}
+            className="w-20 h-20 flex flex-col items-center justify-center gap-1 border-[2px] border-dashed border-evo-accent/40 rounded-xl bg-evo-elevated hover:border-evo-accent transition-all shrink-0">
+            <Image size={16} className="text-evo-accent" />
+            <span className="text-[10px] font-bold text-evo-accent">הוסף</span>
           </button>
-        </div>
-      ) : (
-        <button onClick={() => ref.current?.click()}
-          className="w-full h-28 flex flex-col items-center justify-center gap-2 border-[2px] border-dashed border-evo-accent/40 rounded-[14px] bg-evo-elevated hover:border-evo-accent transition-all">
-          <Image size={20} className="text-evo-accent" />
-          <span className="text-xs font-bold text-evo-accent">הוסף תמונה — חובה</span>
-        </button>
-      )}
+        )}
+      </div>
     </div>
   )
 }
@@ -65,7 +72,7 @@ const PRICE_TYPES = [
   { value: 'per_guest', label: 'לאורח',     icon: '👥' },
 ]
 
-const EMPTY_PRODUCT = { name: '', description: '', price: '', price_type: 'fixed', max_guests: '', min_hours: '', image: null }
+const EMPTY_PRODUCT = { name: '', description: '', price: '', price_type: 'fixed', max_guests: '', min_hours: '', images: [] }
 
 export default function ProductsForm() {
   const { navigate, editPackage, saveProduct, vendorData } = useSupplier()
@@ -77,7 +84,7 @@ export default function ProductsForm() {
   const [saveError, setSaveError]     = useState('')
 
   const addProduct = () => {
-    if (!form.name || !form.price || !form.image) return
+    if (!form.name || !form.price || form.images.length === 0) return
     setProductList(prev => [...prev, { ...form, id: `prod-${Date.now()}` }])
     setForm(EMPTY_PRODUCT)
     setShowForm(false)
@@ -122,8 +129,8 @@ export default function ProductsForm() {
             <motion.div key={p.id}
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}
               className="flex items-start gap-3 bg-white rounded-[16px] border-[1.5px] border-evo-green p-3.5 mb-3">
-              {p.image ? (
-                <img src={p.image} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
+              {p.images?.[0] ? (
+                <img src={p.images[0]} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-evo-elevated flex items-center justify-center shrink-0 mt-0.5">
                   <Check size={13} className="text-evo-purple" />
@@ -168,8 +175,8 @@ export default function ProductsForm() {
                 )}
               </div>
 
-              {/* Product image — required */}
-              <ProductImageUpload value={form.image} onChange={img => setForm(p => ({ ...p, image: img }))} />
+              {/* Product images — required */}
+              <ProductImagesUpload images={form.images} onChange={imgs => setForm(p => ({ ...p, images: imgs }))} />
 
               {/* Name */}
               <div>
@@ -227,7 +234,7 @@ export default function ProductsForm() {
                 </div>
               </div>
 
-              <button onClick={addProduct} disabled={!form.name || !form.price || !form.image}
+              <button onClick={addProduct} disabled={!form.name || !form.price || form.images.length === 0}
                 className="w-full py-3 rounded-xl text-sm font-extrabold text-white transition-all disabled:opacity-30 active:scale-[0.98]"
                 style={{ background: '#2D1B8A' }}>
                 <Plus size={14} className="inline mr-1.5" />הוסף מוצר
@@ -259,7 +266,8 @@ export default function ProductsForm() {
                   price_type:   p.price_type,
                   min_hours:    parseInt(p.min_hours) || 0,
                   max_guests:   p.max_guests ? parseInt(p.max_guests) : 0,
-                  image_url:    p.image || null,
+                  image_url:    p.images?.[0] || null,
+                  image_urls:   p.images || [],
                   is_available: true,
                   sort_order:   i,
                 })

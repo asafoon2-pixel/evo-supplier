@@ -20,6 +20,8 @@ import Payments       from './screens/Payments'
 import Insights       from './screens/Insights'
 import PackageForm    from './screens/PackageForm'
 import ProductsForm   from './screens/ProductsForm'
+import DbAgent        from './screens/DbAgent'
+import AdminDashboard from './screens/AdminDashboard'
 
 const screenMap = {
   entry:        Entry,
@@ -36,14 +38,31 @@ const screenMap = {
   insights:     Insights,
   packageForm:  PackageForm,
   productsForm: ProductsForm,
+  dbAgent:      DbAgent,
+  admin:        AdminDashboard,
 }
 
 const tabScreens = ['home', 'calendar', 'events', 'leadDetail', 'eventDetail',
                     'catalog', 'profile', 'payments', 'insights']
 
+const ADMIN_KEY = 'evo_admin_mode'
+
 function AppContent() {
-  const { screen, authLoading } = useSupplier()
+  const { screen, navigate, authLoading } = useSupplier()
   const [splashDone, setSplashDone] = useState(false)
+
+  // Detect ?admin=true in URL and navigate to admin screen
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('admin') === 'true') {
+      sessionStorage.setItem(ADMIN_KEY, 'true')
+      // Clean URL without reload
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+    if (sessionStorage.getItem(ADMIN_KEY) === 'true' && !authLoading) {
+      navigate('admin')
+    }
+  }, [authLoading])
 
   // Splash shows for at least 2 seconds and until auth is resolved
   useEffect(() => {
