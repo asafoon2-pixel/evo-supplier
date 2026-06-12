@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { useSupplier } from '../context/SupplierContext'
-import { doc, updateDoc } from 'firebase/firestore'
+import { doc, updateDoc, setDoc, deleteDoc, Timestamp, collection } from 'firebase/firestore'
 import { db } from '../firebase'
 import EvoLogo from '../components/EvoLogo'
 
@@ -175,13 +175,24 @@ export default function CalendarScreen() {
     const d = { year: viewYear, month: viewMonth, day }
     if (bookedDates.some(b => sameDate(b, d))) return
     setBlocked(prev => {
-      const next = prev.some(b => sameDate(b, d))
+      const isCurrentlyBlocked = prev.some(b => sameDate(b, d))
+      const next = isCurrentlyBlocked
         ? prev.filter(b => !sameDate(b, d))
         : [...prev, d]
       if (user?.uid) {
+        const dateStr = dateToStr(d)
         updateDoc(doc(db, 'vendors', user.uid), {
           blocked_dates: next.map(dateToStr),
         }).catch(() => {})
+        const availRef = doc(db, 'vendors', user.uid, 'availability', dateStr)
+        if (isCurrentlyBlocked) {
+          deleteDoc(availRef).catch(() => {})
+        } else {
+          setDoc(availRef, {
+            date: Timestamp.fromDate(new Date(d.year, d.month, d.day)),
+            is_available: false,
+          }).catch(() => {})
+        }
       }
       return next
     })
@@ -329,13 +340,14 @@ export default function CalendarScreen() {
               const isPast    = new Date(viewYear, viewMonth, day) < new Date(today.getFullYear(), today.getMonth(), today.getDate())
               return (
                 <button key={day} onClick={() => !isPast && toggleBlock(day)} disabled={isPast}
-                  className={`aspect-square rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all relative
-                    ${isBooked  ? 'bg-evo-accent/20 text-evo-accent border-[1.5px] border-evo-dim cursor-default' :
-                      isBlocked ? 'bg-evo-elevated text-evo-muted border-[1.5px] border-evo-border line-through' :
-                      isToday   ? 'border-[1.5px] border-evo-purple-mid text-evo-purple-mid' :
-                      isPast    ? 'text-evo-muted opacity-30' :
-                                  'text-evo-text hover:bg-evo-elevated'}
-                  `}
+                  className="aspect-square rounded-lg text-xs font-bold flex flex-col items-center justify-center gap-0.5 transition-all relative"
+                  style={
+                    isBooked  ? { background: 'rgba(107,95,228,0.15)', border: '1.5px solid rgba(107,95,228,0.4)', color: '#6B5FE4', cursor: 'default' } :
+                    isBlocked ? { background: 'rgba(212,96,122,0.15)', border: '1.5px solid rgba(212,96,122,0.4)', color: '#C8445E' } :
+                    isToday   ? { border: '1.5px solid #6B5FE4', color: '#6B5FE4' } :
+                    isPast    ? { opacity: 0.3, color: '#999' } :
+                                { background: 'rgba(74,158,114,0.13)', border: '1.5px solid rgba(74,158,114,0.3)', color: '#3A8F68' }
+                  }
                 >
                   {day}
                 </button>
@@ -346,16 +358,16 @@ export default function CalendarScreen() {
           {/* Legend */}
           <div className="flex items-center gap-3 mt-4 pt-4 border-t border-evo-border flex-wrap">
             <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm border-[1.5px]" style={{ background: 'rgba(74,158,114,0.13)', borderColor: 'rgba(74,158,114,0.3)' }} />
+              <p className="text-evo-muted text-xs font-medium">פנוי</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-sm border-[1.5px]" style={{ background: 'rgba(212,96,122,0.15)', borderColor: 'rgba(212,96,122,0.4)' }} />
+              <p className="text-evo-muted text-xs font-medium">לא פנוי</p>
+            </div>
+            <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-sm bg-evo-accent/20 border-[1.5px] border-evo-dim" />
               <p className="text-evo-muted text-xs font-medium">EVO הזמין</p>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm bg-evo-elevated border-[1.5px] border-evo-border" />
-              <p className="text-evo-muted text-xs font-medium">חסום</p>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm border-[1.5px] border-evo-purple-mid" />
-              <p className="text-evo-muted text-xs font-medium">היום</p>
             </div>
           </div>
         </div>

@@ -474,11 +474,18 @@ export default function AdminDashboard() {
             <p className="text-white/60 text-[11px] font-bold uppercase tracking-wider">EVO</p>
             <p className="text-white text-xl font-black">Admin Dashboard</p>
           </div>
-          <button onClick={loadAll}
-            className="w-9 h-9 rounded-full flex items-center justify-center"
-            style={{ background: 'rgba(255,255,255,0.12)' }}>
-            <RefreshCw size={16} className="text-white" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={loadAll}
+              className="w-9 h-9 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(255,255,255,0.12)' }}>
+              <RefreshCw size={16} className="text-white" />
+            </button>
+            <button onClick={logout}
+              className="px-3 h-9 rounded-full text-xs font-bold flex items-center"
+              style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)' }}>
+              התנתק
+            </button>
+          </div>
         </div>
         <p className="text-white/50 text-xs">
           {auth.currentUser?.email}

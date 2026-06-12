@@ -435,6 +435,11 @@ export function SupplierProvider({ children }) {
           } catch {}
 
           if (adminFound) {
+            // Also load vendor data if admin has a vendor doc
+            if (hasDoc === true) {
+              loadEvents(firebaseUser.uid).catch(() => {})
+              listenLeads(firebaseUser.uid)
+            }
             setScreen('admin')
           } else if (hasDoc === true) {
             // Load events in background, start real-time leads listener
