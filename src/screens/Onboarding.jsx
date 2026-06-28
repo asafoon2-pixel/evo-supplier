@@ -17,6 +17,7 @@ const CATEGORIES = [
   { icon: '🎤', name: 'Entertainment', desc: 'DJ, להקות, אמנים' },
   { icon: '🍽️', name: 'Catering',      desc: 'אוכל, צוות שירות, ציוד' },
   { icon: '🚌', name: 'Transport',     desc: 'הסעות, לימוזינה, מיניבוסים' },
+  { icon: '🎪', name: 'Equipment',    desc: 'שמשיות, ריהוט, גנרטורים, מאווררים' },
 ]
 
 const EXPERIENCE_OPTIONS = [
@@ -69,6 +70,7 @@ const BIO_HINTS = {
   Entertainment: ['שומרים על האנרגיה גבוהה כל הלילה', 'קוראים את הקהל ומנגנים את הדבר הנכון', 'DJ מקצועי עם 10+ שנות ניסיון'],
   Catering:      ['תפריטים עונתיים טריים מותאמים לאורחים שלך', 'שירות מלא מהקמה ועד פינוי', 'אפשרויות תזונתיות לכל דרישה'],
   Transport:     ['הסעה יוקרתית לאורחים שלך', 'נהגים מקצועיים שמגיעים בזמן', 'צי רכבים לכל גודל קבוצה'],
+  Equipment:     ['ציוד איכותי להשכרה לכל אירוע', 'שמשיות, מאווררים, ריהוט וגנרטורים', 'פתרונות לכל צורך לוגיסטי באירוע'],
 }
 
 // ─── PACKAGE TEMPLATES ────────────────────────────────────────
@@ -159,6 +161,17 @@ const PACKAGE_TEMPLATES = {
       { key: 'driver',          label: 'נהג כלול',          type: 'toggle' },
       { key: 'hours',           label: 'שעות שירות',        type: 'number', ph: '4' },
       { key: 'routes',          label: 'מסלולים / אזור',    type: 'text',   ph: 'לדוגמה: אזור תל אביב', optional: true },
+    ],
+  },
+  Equipment: {
+    types: ['ציוד בסיסי', 'חבילה בינונית', 'חבילה מלאה', 'אירוע גדול / פרמיום'],
+    fields: [
+      { key: 'umbrellas',      label: 'שמשיות',             type: 'number', ph: '10' },
+      { key: 'fans',           label: 'מאווררים',           type: 'number', ph: '5' },
+      { key: 'furniture_sets', label: 'סטי ריהוט',          type: 'text',   ph: 'לדוגמה: 10 שולחנות + 50 כסאות' },
+      { key: 'generator',      label: 'גנרטור כלול',        type: 'toggle' },
+      { key: 'generator_kw',   label: 'הספק גנרטור (kW)',   type: 'number', ph: '20', optional: true },
+      { key: 'delivery',       label: 'משלוח והקמה כלולים', type: 'toggle' },
     ],
   },
 }

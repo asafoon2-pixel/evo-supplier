@@ -316,5 +316,5 @@ export const insights = {
 export const supplierCategories = [
   'DJ', 'Sound & AV', 'Lighting', 'Photography', 'Videography',
   'Catering', 'Bar & Drinks', 'Decor & Florals', 'Furniture & Rentals',
-  'Venue', 'Entertainment', 'Hair & Makeup', 'Transportation', 'Other',
+  'Venue', 'Entertainment', 'Hair & Makeup', 'Transportation', 'Equipment', 'Other',
 ]
