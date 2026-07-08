@@ -46,7 +46,10 @@ const PRICE_TYPES = [
   { value: 'fixed',     label: 'מחיר קבוע', icon: '📦', desc: 'מחיר כולל' },
   { value: 'per_hour',  label: 'לפי שעה',   icon: '⏱',  desc: 'תעריף שעתי' },
   { value: 'per_guest', label: 'לאורח',     icon: '👥', desc: 'לנפש' },
+  { value: 'per_day',   label: 'ליום',      icon: '📅', desc: 'לפי יום' },
 ]
+
+const EQUIPMENT_SUBCATS = ['ריהוט', 'קירור / מאווררים', 'הצללה / שמשיות', 'אחר']
 
 const PRICING_RULES = [
   { type: 'weekend_surcharge', label: 'תוספת סוף שבוע',  icon: '🌙', desc: 'מחיר גבוה יותר בשישי-שבת' },
@@ -489,6 +492,13 @@ export default function Onboarding() {
   const [hasInsurance, setHasInsurance] = useState(null)
   const [hasLicense,   setHasLicense]   = useState(null)
 
+  // Equipment-specific fields
+  const [equipSubcats,     setEquipSubcats]     = useState([])
+  const [equipMinOrder,    setEquipMinOrder]     = useState('')
+  const [equipPricePerDay, setEquipPricePerDay]  = useState('')
+  const [equipDelivery,    setEquipDelivery]     = useState(false)
+  const [equipDamagePolicy,setEquipDamagePolicy] = useState('')
+
   const catIcon = CATEGORIES.find(c => c.name === category)?.icon || '📦'
   const finalCity = city === 'Other' ? customCity : city
   const tpl = PACKAGE_TEMPLATES[category] || null
@@ -561,7 +571,12 @@ export default function Onboarding() {
             slug:                  bizName.toLowerCase().replace(/[^a-z0-9֐-׿\s]/g, '').trim().replace(/\s+/g, '-') + '-' + uid.slice(-4),
             owner_full_name:       ownerName,
             category:              category,
-            sub_category:          '',
+            sub_category:          category === 'Equipment' ? equipSubcats.join(', ') : '',
+            equipment_subcategories: category === 'Equipment' ? equipSubcats : [],
+            equipment_price_per_day: category === 'Equipment' ? parseFloat(equipPricePerDay) || null : null,
+            equipment_min_order:     category === 'Equipment' ? parseFloat(equipMinOrder) || null : null,
+            equipment_delivery:      category === 'Equipment' ? equipDelivery : null,
+            equipment_damage_policy: category === 'Equipment' ? equipDamagePolicy || null : null,
             city:                  finalCity,
             full_address:          address,
             lat:                   null,
@@ -889,6 +904,80 @@ export default function Onboarding() {
                 <input type="url" value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://yourbusiness.com"
                   className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3.5 text-evo-text text-[15px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors" />
               </div>
+
+              {/* ── Equipment-only fields ── */}
+              {category === 'Equipment' && (
+                <>
+                  {/* A. Sub-categories */}
+                  <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-4 space-y-3">
+                    <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">קטגוריות ציוד שאתה מספק</p>
+                    {EQUIPMENT_SUBCATS.map(sub => (
+                      <button key={sub} onClick={() => setEquipSubcats(prev =>
+                        prev.includes(sub) ? prev.filter(s => s !== sub) : [...prev, sub]
+                      )}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-[14px] border-[1.5px] transition-all text-right ${
+                          equipSubcats.includes(sub) ? 'bg-evo-elevated border-evo-purple-mid' : 'bg-white border-evo-border'
+                        }`}>
+                        <div className={`w-4 h-4 rounded border-[1.5px] flex items-center justify-center shrink-0 transition-all ${
+                          equipSubcats.includes(sub) ? 'bg-evo-purple-mid border-evo-purple-mid' : 'border-evo-dim'
+                        }`}>
+                          {equipSubcats.includes(sub) && <Check size={10} color="white" />}
+                        </div>
+                        <span className={`text-sm font-bold ${equipSubcats.includes(sub) ? 'text-evo-purple' : 'text-evo-text'}`}>{sub}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* B. Pricing */}
+                  <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-4 space-y-3">
+                    <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">תמחור בסיסי</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-bold text-evo-muted block mb-2">מחיר ליחידה ליום (₪)</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-evo-muted font-bold text-sm">₪</span>
+                          <input type="number" value={equipPricePerDay} onChange={e => setEquipPricePerDay(e.target.value)}
+                            placeholder="0"
+                            className="w-full bg-white border-[1.5px] border-evo-border rounded-xl pl-7 pr-3 py-3 text-evo-text text-[14px] focus:outline-none focus:border-evo-purple-mid transition-colors" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-evo-muted block mb-2">מינימום הזמנה (₪)</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-evo-muted font-bold text-sm">₪</span>
+                          <input type="number" value={equipMinOrder} onChange={e => setEquipMinOrder(e.target.value)}
+                            placeholder="0"
+                            className="w-full bg-white border-[1.5px] border-evo-border rounded-xl pl-7 pr-3 py-3 text-evo-text text-[14px] focus:outline-none focus:border-evo-purple-mid transition-colors" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* E. Logistics */}
+                  <div className="bg-white rounded-[20px] border-[1.5px] border-evo-border p-4 space-y-4">
+                    <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">לוגיסטיקה</p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-bold text-evo-text">אספקה והובלה כלולה במחיר</p>
+                      </div>
+                      <button onClick={() => setEquipDelivery(p => !p)}
+                        className={`w-11 h-6 rounded-full transition-all ${equipDelivery ? 'bg-evo-purple-mid' : 'bg-evo-border'}`}>
+                        <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5 ${equipDelivery ? 'translate-x-5' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-evo-muted block mb-2">זמן הקמה נדרש (שעות)</label>
+                      <Stepper value={setupTime} onChange={setSetupTime} min={0} max={12} label="" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-evo-muted block mb-2">מדיניות נזק / אובדן ציוד</label>
+                      <textarea value={equipDamagePolicy} onChange={e => setEquipDamagePolicy(e.target.value)} rows={2}
+                        placeholder="לדוגמה: נזק לציוד יחויב במחיר הרכישה המלא. אובדן מלא — 100% ערך הפריט."
+                        className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors resize-none" />
+                    </div>
+                  </div>
+                </>
+              )}
             </motion.div>
           )}
 
@@ -1012,8 +1101,8 @@ export default function Onboarding() {
                 aspect="landscape"
               />
 
-              {/* Package type selector */}
-              {tpl && (
+              {/* Package type selector / name */}
+              {tpl && category !== 'Equipment' && (
                 <div>
                   <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">סוג חבילה</label>
                   <div className="space-y-2">
@@ -1031,6 +1120,14 @@ export default function Onboarding() {
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
+              {category === 'Equipment' && (
+                <div>
+                  <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">שם החבילה</label>
+                  <input type="text" value={pkgTypeName} onChange={e => setPkgTypeName(e.target.value)}
+                    placeholder="לדוגמה: חבילת בסיס, חבילת ריהוט מלאה…"
+                    className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3.5 text-evo-text text-[15px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors" />
                 </div>
               )}
 
@@ -1099,8 +1196,8 @@ export default function Onboarding() {
                 <p className={`text-xs font-bold mt-1 text-right ${pkgDesc.length > 10 ? 'text-evo-green' : 'text-evo-muted'}`}>{pkgDesc.length} תווים</p>
               </div>
 
-              {/* Category template fields */}
-              {tpl && pkgTypeName && (
+              {/* Category template fields — hidden for Equipment (free text only) */}
+              {tpl && pkgTypeName && category !== 'Equipment' && (
                 <div className="space-y-3">
                   <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">מה כלול — {pkgTypeName.split('(')[0].trim()}</p>
                   {tpl.fields.map(field => (
