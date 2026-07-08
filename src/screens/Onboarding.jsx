@@ -715,7 +715,7 @@ export default function Onboarding() {
   const slide = { initial: { opacity: 0, x: 24 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -24 }, transition: { duration: 0.22 } }
 
   return (
-    <div className="flex flex-col min-h-screen bg-evo-bg">
+    <div className="flex flex-col h-screen bg-evo-bg">
       <Header onBack={back} step={step} />
 
       <div className="flex-1 overflow-y-auto no-scrollbar">
