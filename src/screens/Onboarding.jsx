@@ -718,7 +718,7 @@ export default function Onboarding() {
     <div className="flex flex-col h-screen bg-evo-bg">
       <Header onBack={back} step={step} />
 
-      <div className="flex-1 overflow-y-auto no-scrollbar">
+      <div className="flex-1 overflow-y-auto no-scrollbar min-h-0">
         <AnimatePresence mode="wait">
 
           {/* ── 0: Category ── */}
