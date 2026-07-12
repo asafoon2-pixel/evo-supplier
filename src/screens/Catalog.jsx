@@ -326,9 +326,13 @@ export default function Catalog() {
           <span className="text-evo-muted text-sm font-medium group-hover:text-evo-purple transition-colors">הוסף חבילה חדשה</span>
         </button>
         <button onClick={() => { setEditPackage(null); navigate('productsForm') }}
-          className="w-full py-4 rounded-[20px] border-[1.5px] border-dashed border-evo-border flex items-center justify-center gap-3 hover:border-evo-purple-mid transition-all group">
-          <Plus size={16} className="text-evo-muted group-hover:text-evo-purple transition-colors" />
-          <span className="text-evo-muted text-sm font-medium group-hover:text-evo-purple transition-colors">הוסף מוצר בודד</span>
+          className="w-full py-4 rounded-[20px] border-[1.5px] border-evo-purple-mid flex items-center justify-center gap-3 hover:bg-evo-elevated transition-all group"
+          style={{ background: 'rgba(107,95,228,0.05)' }}>
+          <Plus size={16} className="text-evo-purple" />
+          <div className="text-right">
+            <span className="text-evo-purple text-sm font-bold block">הוסף מוצר בודד</span>
+            <span className="text-evo-muted text-[10px]">à la carte — ללא קשר לחבילה</span>
+          </div>
         </button>
       </div>
 

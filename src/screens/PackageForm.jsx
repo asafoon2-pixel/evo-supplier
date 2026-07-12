@@ -1,114 +1,164 @@
 import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Check, Zap, Plus, Minus, X, Image } from 'lucide-react'
+import { ArrowLeft, Zap, Plus, Minus, X, Image } from 'lucide-react'
 import { useSupplier } from '../context/SupplierContext'
 
-const PRICE_TYPES = [
-  { value: 'fixed',     label: 'מחיר קבוע', icon: '📦', desc: 'מחיר כולל' },
-  { value: 'per_hour',  label: 'לשעה',      icon: '⏱',  desc: 'תעריף שעתי' },
-  { value: 'per_guest', label: 'לאורח',     icon: '👥', desc: 'לאדם' },
+// ── 7-tier guest count pricing (Catering, Bar) ──────────────────
+const GUEST_TIERS = [
+  { key: '0_50',    label: '0–50 אורחים' },
+  { key: '50_100',  label: '50–100 אורחים' },
+  { key: '100_150', label: '100–150 אורחים' },
+  { key: '150_200', label: '150–200 אורחים' },
+  { key: '200_250', label: '200–250 אורחים' },
+  { key: '250_300', label: '250–300 אורחים' },
+  { key: '300_plus',label: '300+ אורחים' },
 ]
 
-const PKG_BADGES = [
-  { value: 'most_popular',    label: '⭐ הכי פופולרי' },
-  { value: 'best_value',      label: '💰 הכי משתלם' },
-  { value: 'evo_recommended', label: '✦ מומלץ EVO' },
+// ── 3-tier event size pricing (Decor) ───────────────────────────
+const SIZE_TIERS = [
+  { key: 'small',  label: 'קטן' },
+  { key: 'medium', label: 'בינוני' },
+  { key: 'large',  label: 'גדול' },
 ]
 
-const PACKAGE_TEMPLATES = {
+// ── Per-category config per spec ─────────────────────────────────
+const CATEGORY_CONFIG = {
   Sound: {
-    types: ['אירוע קטן (עד 150 אורחים)', 'אירוע בינוני (150–300)', 'אירוע גדול (300–600)', 'פרמיום / פסטיבל (600+)'],
+    pricing_model: 'flat_per_package',
+    price_label: 'מחיר לחבילה (₪)',
+    packages: [
+      { id: 'up_100',  name: 'עד 100 אורחים' },
+      { id: 'up_200',  name: 'עד 200 אורחים' },
+      { id: 'up_400',  name: 'עד 400 אורחים' },
+      { id: 'premium', name: 'פרמיום — ללא הגבלת כמות' },
+    ],
     fields: [
-      { key: 'speakers',      label: 'רמקולים',               type: 'text',   ph: 'לדוגמה: 2× JBL SRX815' },
-      { key: 'subwoofers',    label: 'סאבוופרים',             type: 'text',   ph: 'לדוגמה: 1× JBL SRX818', optional: true },
-      { key: 'mixer',         label: 'מיקסר / קונסולה',       type: 'text',   ph: 'לדוגמה: Pioneer DJM-900' },
-      { key: 'microphones',   label: 'מיקרופונים',            type: 'number', ph: '2' },
-      { key: 'dj_connection', label: 'חיבור DJ כלול',         type: 'toggle' },
-      { key: 'technician',    label: 'טכנאי',                  type: 'select', options: ['ללא', 'הקמה בלבד', 'לאורך כל האירוע'] },
+      { key: 'speakers',       label: 'מספר רמקולים',       type: 'number', ph: '4' },
+      { key: 'microphones',    label: 'מספר מיקרופונים',    type: 'number', ph: '2' },
+      { key: 'lighting_heads', label: 'מספר ראשי תאורה',    type: 'number', ph: '0' },
+      { key: 'technician',     label: 'טכנאי צמוד באירוע',  type: 'toggle' },
     ],
   },
   Lighting: {
-    types: ['תאורה בסיסית', 'תאורת מסיבה', 'הגדרת קלאב', 'פרודקשן פרמיום'],
-    fields: [
-      { key: 'par_lights',   label: 'פנסי PAR',         type: 'number', ph: '8' },
-      { key: 'moving_heads', label: 'ראשים נעים',        type: 'number', ph: '4' },
-      { key: 'led_strips',   label: 'רצועות LED',        type: 'text',   ph: 'לדוגמה: 10 מטר RGB', optional: true },
-      { key: 'fog_machine',  label: 'מכונת עשן',         type: 'toggle' },
-      { key: 'laser',        label: 'תצוגת לייזר',       type: 'toggle', optional: true },
-      { key: 'operator',     label: 'מפעיל תאורה',       type: 'select', options: ['ללא', 'הקמה בלבד', 'לאורך כל האירוע'] },
+    pricing_model: 'flat_per_package',
+    price_label: 'מחיר לחבילה (₪)',
+    packages: [
+      { id: 'up_100',  name: 'עד 100 אורחים' },
+      { id: 'up_200',  name: 'עד 200 אורחים' },
+      { id: 'up_400',  name: 'עד 400 אורחים' },
+      { id: 'premium', name: 'פרמיום — ללא הגבלת כמות' },
     ],
-  },
-  Decor: {
-    types: ['הגדרה בסיסית', 'אירוע מעוצב', 'עיצוב פרמיום', 'חוויית אינסטגרם'],
     fields: [
-      { key: 'floral',       label: 'סידורי פרחים',      type: 'text',   ph: 'לדוגמה: 10 סידורי שולחן' },
-      { key: 'centerpieces', label: 'סנטרפיסים',          type: 'number', ph: '10' },
-      { key: 'backdrop',     label: 'רקע / ווייב',        type: 'toggle' },
-      { key: 'color_scheme', label: 'פלטת צבעים',         type: 'text',   ph: 'לדוגמה: לבן וזהב' },
-      { key: 'props',        label: 'אביזרים',             type: 'text',   ph: 'לדוגמה: נרות, פנסים', optional: true },
-      { key: 'setup_crew',   label: 'צוות הקמה (אנשים)',  type: 'number', ph: '2' },
-    ],
-  },
-  Bar: {
-    types: ['בר בסיסי', 'בר קלאסי', 'בר פרמיום', 'פתוח — לוקסוס'],
-    fields: [
-      { key: 'bartenders',       label: 'ברמנים',                 type: 'number', ph: '2' },
-      { key: 'bar_equipment',    label: 'ציוד בר',                type: 'text',   ph: 'לדוגמה: בר נייד, מכונת קרח' },
-      { key: 'alcohol_included', label: 'אלכוהול כלול במחיר',    type: 'toggle' },
-      { key: 'cocktail_menu',    label: 'תפריט קוקטיילים',        type: 'text',   ph: 'לדוגמה: 8 קוקטיילים מיוחדים' },
-      { key: 'non_alcoholic',    label: 'אפשרויות ללא אלכוהול',  type: 'toggle' },
-      { key: 'hours_service',    label: 'שעות שירות',             type: 'number', ph: '5' },
-    ],
-  },
-  Photography: {
-    types: ['כיסוי בסיסי', 'אירוע סטנדרטי', 'כיסוי פרמיום', 'פרודקשן מלא'],
-    fields: [
-      { key: 'photographers',  label: 'צלמים',                   type: 'number', ph: '1' },
-      { key: 'videographers',  label: 'צלמי וידאו',              type: 'number', ph: '1', optional: true },
-      { key: 'hours_coverage', label: 'שעות צילום',              type: 'number', ph: '6' },
-      { key: 'editing_days',   label: 'עריכה ומסירה (ימים)',     type: 'number', ph: '14' },
-      { key: 'drone',          label: 'צילום רחפן',              type: 'toggle', optional: true },
-      { key: 'photo_booth',    label: 'פוטו בות',                type: 'toggle', optional: true },
-    ],
-  },
-  Entertainment: {
-    types: ['מבצע בסיסי', 'מבצע מקצועי', 'הדלייט', 'חוויה מלאה'],
-    fields: [
-      { key: 'performers',       label: 'מספר מבצעים',       type: 'number', ph: '1' },
-      { key: 'performance_type', label: 'סוג הופעה',          type: 'text',   ph: 'לדוגמה: DJ, להקה חיה, MC' },
-      { key: 'set_duration',     label: 'משך סט (שעות)',      type: 'number', ph: '3' },
-      { key: 'equipment',        label: 'ציוד כלול',           type: 'toggle' },
-      { key: 'sound_system',     label: 'מערכת שמע כלולה',    type: 'toggle', optional: true },
-      { key: 'lighting_show',    label: 'תצוגת תאורה',        type: 'toggle', optional: true },
+      { key: 'par_lights',   label: 'פנסי PAR',            type: 'number', ph: '8' },
+      { key: 'moving_heads', label: 'ראשים נעים',           type: 'number', ph: '4' },
+      { key: 'total_heads',  label: 'סה״כ ראשי תאורה',     type: 'number', ph: '12' },
+      { key: 'technician',   label: 'טכנאי צמוד באירוע',   type: 'toggle' },
     ],
   },
   Catering: {
-    types: ['פינגרפוד', 'בופה', 'קייטרינג פרמיום', 'תחנות חי'],
+    pricing_model: 'per_head_tiers',
+    price_label: 'מחיר לראש לפי כמות אורחים (₪)',
+    packages: [
+      { id: 'basic',    name: 'בסיסית',  desc: 'מנות ראשונות בלבד (בופה)' },
+      { id: 'standard', name: 'סטנדרט', desc: 'מנות ראשונות + מנות עיקריות' },
+      { id: 'premium',  name: 'פרמיום',  desc: 'ראשונות + עיקריות + קינוח + תוספות פרמיום' },
+    ],
     fields: [
-      { key: 'dishes_count', label: 'מספר מנות',          type: 'number', ph: '12' },
-      { key: 'waitstaff',    label: 'מלצרים',              type: 'number', ph: '3' },
-      { key: 'dietary',      label: 'אפשרויות תזונה',     type: 'text',   ph: 'לדוגמה: טבעוני, ללא גלוטן' },
-      { key: 'setup',        label: 'הקמה ושירות כלולים', type: 'toggle' },
-      { key: 'cleanup',      label: 'פינוי כלול',          type: 'toggle' },
-      { key: 'kosher',       label: 'כשר מוסמך',           type: 'toggle' },
+      { key: 'serving_equipment', label: 'כלי הגשה',           type: 'toggle' },
+      { key: 'tablecloths',       label: 'מפות שולחן',          type: 'toggle' },
+      { key: 'cutlery_type',      label: 'צלחות וסכו"ם',        type: 'select', options: ['חד פעמי', 'רב פעמי'] },
+      { key: 'heating_stations',  label: 'עמדות חימום',          type: 'toggle' },
+      { key: 'waitstaff_count',   label: 'צוות הגשה (אנשים)',   type: 'number', ph: '3' },
+    ],
+  },
+  Bar: {
+    pricing_model: 'per_head_tiers',
+    price_label: 'מחיר לראש לפי כמות אורחים (₪)',
+    packages: [
+      { id: 'basic',   name: 'בסיסית',  desc: 'אלכוהול בסיסי' },
+      { id: 'classic', name: 'קלאסית',  desc: 'אלכוהול קלאסי + קוקטיילים מובחרים' },
+      { id: 'premium', name: 'פרמיום',  desc: 'אלכוהול פרמיום + קוקטיילים + ברמן שואו / תחנות בר' },
+    ],
+    fields: [
+      { key: 'bartenders_count', label: 'ברמנים כלולים',   type: 'number', ph: '2' },
+      { key: 'bar_station',      label: 'עמדת בר',          type: 'toggle' },
+      { key: 'ice_included',     label: 'קרח',               type: 'toggle' },
+      { key: 'glasses_included', label: 'כוסות',             type: 'toggle' },
+      { key: 'bar_decor',        label: 'תפאורת בר',         type: 'toggle' },
+    ],
+  },
+  Photography: {
+    pricing_model: 'flat_per_package',
+    price_label: 'מחיר קבוע לחבילה (₪)',
+    packages: [
+      { id: 'basic',    name: 'חבילה 1', desc: 'צלם סטילס אחד' },
+      { id: 'standard', name: 'חבילה 2', desc: 'סטילס + וידאו + Movie After' },
+      { id: 'premium',  name: 'פרמיום',  desc: 'סטילס + וידאו + מגנטים + Movie After + עריכה' },
+    ],
+    fields: [
+      { key: 'photographers',  label: 'צלמי סטילס',              type: 'number', ph: '1' },
+      { key: 'videographers',  label: 'צלמי וידאו',               type: 'number', ph: '0', optional: true },
+      { key: 'hours_coverage', label: 'שעות צילום',               type: 'number', ph: '6' },
+      { key: 'magnets',        label: 'צילום מגנטים (פרינטר)',    type: 'toggle', optional: true },
+      { key: 'movie_after',    label: 'Movie After',              type: 'toggle', optional: true },
+      { key: 'edited_photos',  label: 'תמונות ערוכות (כמות)',     type: 'number', ph: '100', optional: true },
+      { key: 'extra_hour_fee', label: 'תוספת שעה חריגה (₪/שעה)', type: 'number', ph: '300', optional: true },
+    ],
+  },
+  Decor: {
+    pricing_model: 'size_tiers',
+    price_label: 'מחיר לפי גודל אירוע (₪)',
+    packages: [
+      { id: 'basic',    name: 'בסיסית', desc: 'עיצוב שולחנות — אגרטלים וצמחייה' },
+      { id: 'standard', name: 'סטנדרט', desc: 'שולחנות + חופה/במה + תאורה דקורטיבית + פלטת צבעים' },
+      { id: 'premium',  name: 'פרמיום', desc: 'הכל + הדפסות ותפאורה מותאמת אישית' },
+    ],
+  },
+  Entertainment: {
+    pricing_model: 'flat_per_package',
+    price_label: 'מחיר לחבילה (₪)',
+    packages: [
+      { id: 'basic',    name: 'בסיסי' },
+      { id: 'standard', name: 'מקצועי' },
+      { id: 'premium',  name: 'פרמיום' },
+    ],
+    fields: [
+      { key: 'performers',       label: 'מספר מבצעים',    type: 'number', ph: '1' },
+      { key: 'performance_type', label: 'סוג הופעה',       type: 'text',   ph: 'DJ, להקה חיה, MC' },
+      { key: 'set_duration',     label: 'משך סט (שעות)', type: 'number', ph: '3' },
+      { key: 'equipment',        label: 'ציוד כלול',        type: 'toggle' },
     ],
   },
   Transport: {
-    types: ['הסעה בסיסית', 'הסעת קבוצה', 'VIP הסעת'],
+    pricing_model: 'flat_per_package',
+    price_label: 'מחיר לחבילה (₪)',
+    packages: [
+      { id: 'basic', name: 'הסעה בסיסית' },
+      { id: 'group', name: 'הסעת קבוצה' },
+      { id: 'vip',   name: 'VIP' },
+    ],
     fields: [
-      { key: 'vehicles',     label: 'מספר כלי רכב',      type: 'number', ph: '1' },
-      { key: 'vehicle_type', label: 'סוג רכב',            type: 'text',   ph: 'לדוגמה: מיניבוס, לימוזינה, ון' },
-      { key: 'capacity',     label: 'קיבולת לכלי רכב',   type: 'number', ph: '20' },
-      { key: 'driver',       label: 'נהג כלול',           type: 'toggle' },
-      { key: 'hours',        label: 'שעות שירות',         type: 'number', ph: '4' },
-      { key: 'routes',       label: 'מסלולים / אזור',    type: 'text',   ph: 'לדוגמה: אזור תל אביב', optional: true },
+      { key: 'vehicles',     label: 'מספר כלי רכב',  type: 'number', ph: '1' },
+      { key: 'vehicle_type', label: 'סוג רכב',         type: 'text',   ph: 'מיניבוס, לימוזינה' },
+      { key: 'capacity',     label: 'קיבולת לרכב',   type: 'number', ph: '20' },
+      { key: 'driver',       label: 'נהג כלול',         type: 'toggle' },
+      { key: 'hours',        label: 'שעות שירות',     type: 'number', ph: '4' },
+    ],
+  },
+  Equipment: {
+    pricing_model: 'free_text',
+    price_label: 'מחיר לחבילה (₪)',
+    packages: [
+      { id: 'pkg1', name: 'חבילה 1' },
+      { id: 'pkg2', name: 'חבילה 2' },
+      { id: 'pkg3', name: 'חבילה 3' },
     ],
   },
 }
 
-// Fallback category list when no supplier category is set
-const ALL_CATEGORIES = Object.keys(PACKAGE_TEMPLATES)
+const ALL_CATEGORIES = Object.keys(CATEGORY_CONFIG)
 
+// ── UI sub-components ────────────────────────────────────────────
 function Stepper({ value, onChange, min = 0, max = 999, label }) {
   return (
     <div>
@@ -139,11 +189,13 @@ function PhotoUpload({ value, onChange }) {
   }
   return (
     <div>
-      <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">תמונת חבילה</label>
-      <p className="text-xs text-evo-muted font-medium mb-2">הראה ללקוחות מה הם מקבלים — תמונה טובה מגדילה הזמנות</p>
+      <label className="text-xs font-bold text-evo-muted block mb-1 uppercase tracking-wider">
+        תמונת חבילה <span className="text-evo-accent text-[10px] normal-case font-medium">· מומלץ מאוד</span>
+      </label>
+      <p className="text-xs text-evo-muted font-medium mb-2">ניתן לשמור בלי תמונה — החבילה תישמר כטיוטה עד שתוסיף תמונה</p>
       <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile} />
       {value ? (
-        <div className="relative h-32 rounded-[16px] overflow-hidden border-[1.5px] border-evo-purple-mid">
+        <div className="relative h-36 rounded-[16px] overflow-hidden border-[1.5px] border-evo-purple-mid">
           <img src={value} alt="" className="w-full h-full object-cover" />
           <button onClick={() => onChange(null)}
             className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center">
@@ -152,9 +204,10 @@ function PhotoUpload({ value, onChange }) {
         </div>
       ) : (
         <button onClick={() => ref.current?.click()}
-          className="w-full h-32 flex flex-col items-center justify-center gap-2 border-[1.5px] border-dashed border-evo-dim rounded-[16px] bg-evo-elevated hover:border-evo-purple-mid transition-all">
-          <Image size={22} className="text-evo-muted" />
+          className="w-full h-36 flex flex-col items-center justify-center gap-2 border-[2px] border-dashed border-evo-dim rounded-[16px] bg-evo-elevated hover:border-evo-purple-mid transition-all">
+          <Image size={24} className="text-evo-muted" />
           <span className="text-xs font-bold text-evo-muted">הוסף תמונה לחבילה</span>
+          <span className="text-[10px] text-evo-dim">בלי תמונה — יישמר כטיוטה</span>
         </button>
       )}
     </div>
@@ -199,7 +252,7 @@ function TemplateField({ field, value, onChange }) {
   return (
     <div>
       <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
-        {field.label}{field.optional && <span className="ml-1 normal-case text-[10px]">· Optional</span>}
+        {field.label}{field.optional && <span className="ml-1 normal-case text-[10px]">· אופ.</span>}
       </label>
       <input
         type={field.type === 'number' ? 'number' : 'text'}
@@ -212,68 +265,89 @@ function TemplateField({ field, value, onChange }) {
   )
 }
 
+// ── Main component ───────────────────────────────────────────────
 export default function PackageForm() {
   const { navigate, editPackage, savePackage } = useSupplier()
   const isEdit = !!editPackage
-  const [saveError, setSaveError] = useState('')
-  const [saving, setSaving] = useState(false)
 
-  // Pre-fill from existing package if editing
   const [selectedCategory, setSelectedCategory] = useState(null)
 
-  const [pkgTypeName,    setPkgTypeName]    = useState(isEdit ? (editPackage.name || '') : '')
-  const [pkgDesc,        setPkgDesc]        = useState(isEdit ? (editPackage.description || '') : '')
-  const [pkgPrice,       setPkgPrice]       = useState(isEdit ? String(editPackage.price || '') : '')
-  const [pkgPriceType,   setPkgPriceType]   = useState(isEdit ? (editPackage.price_type || 'fixed') : 'fixed')
-  const [pkgMinGuests,   setPkgMinGuests]   = useState(isEdit ? (editPackage.minGuests || 50) : 50)
-  const [pkgMaxGuests,   setPkgMaxGuests]   = useState(isEdit ? (editPackage.maxGuests || 200) : 200)
-  const [pkgMinHours,    setPkgMinHours]    = useState(3)
-  const [pkgImage,       setPkgImage]       = useState(isEdit ? (editPackage.image || null) : null)
+  // Package type selection (from fixed list per category)
+  const [pkgTypeId, setPkgTypeId] = useState(isEdit ? (editPackage.package_type_id || '') : '')
+
+  // Flat / fixed pricing
+  const [pkgPrice,     setPkgPrice]     = useState(isEdit ? String(editPackage.price || '') : '')
+
+  // Per-head 7-tier pricing (Catering, Bar)
+  const [tierPrices, setTierPrices] = useState(() => {
+    if (isEdit && editPackage.guest_tier_prices) return editPackage.guest_tier_prices
+    return Object.fromEntries(GUEST_TIERS.map(t => [t.key, '']))
+  })
+
+  // Size-tier pricing (Decor)
+  const [sizePrices, setSizePrices] = useState(() => {
+    if (isEdit && editPackage.size_prices) return editPackage.size_prices
+    return { small: '', medium: '', large: '' }
+  })
+
+  // Free text (Equipment)
+  const [customName, setCustomName] = useState(isEdit ? (editPackage.custom_name || '') : '')
+  const [customDesc, setCustomDesc] = useState(isEdit ? (editPackage.description || '') : '')
+
+  // Shared
+  const [pkgImage,       setPkgImage]       = useState(isEdit ? (editPackage.image_url || null) : null)
   const [templateValues, setTemplateValues] = useState({})
-  const [staffIncluded,  setStaffIncluded]  = useState(false)
-  const [setupTime,      setSetupTime]      = useState(1)
-  const [pkgAddOns,      setPkgAddOns]      = useState(
-    isEdit && editPackage.addOns ? editPackage.addOns.map(a => a.name) : []
-  )
-  const [addOnInput,     setAddOnInput]     = useState('')
-  const [pkgBadge,       setPkgBadge]       = useState(isEdit && editPackage.popular ? 'most_popular' : null)
+  const [pkgDesc,        setPkgDesc]        = useState(isEdit ? (editPackage.description || '') : '')
+  const [saveError,      setSaveError]      = useState('')
+  const [saving,         setSaving]         = useState(false)
 
   const setTplField = (key, val) => setTemplateValues(prev => ({ ...prev, [key]: val }))
-  const addAddOn = () => {
-    const v = addOnInput.trim()
-    if (v && !pkgAddOns.includes(v)) { setPkgAddOns(prev => [...prev, v]); setAddOnInput('') }
-  }
 
-  const tpl = PACKAGE_TEMPLATES[selectedCategory] || null
-  const canSave = pkgTypeName.length > 0 && pkgDesc.length > 10 && parseFloat(pkgPrice) > 0
+  const cfg = selectedCategory ? CATEGORY_CONFIG[selectedCategory] : null
+  const selectedPkg = cfg ? cfg.packages.find(p => p.id === pkgTypeId) : null
 
-  // ── Category picker (new package) or template picker (edit) ──
+  // ── Validation ───────────────────────────────────────────────
+  // Image is recommended but not blocking — packages without an image
+  // are saved as drafts (is_available: false) until an image is added.
+  const canSave = (() => {
+    if (!cfg) return false
+    if (cfg.pricing_model === 'free_text') {
+      return customName.length > 1 && customDesc.length > 5 && parseFloat(pkgPrice) > 0
+    }
+    if (!pkgTypeId) return false
+    if (cfg.pricing_model === 'per_head_tiers') {
+      return Object.values(tierPrices).some(v => parseFloat(v) > 0)
+    }
+    if (cfg.pricing_model === 'size_tiers') {
+      return Object.values(sizePrices).some(v => parseFloat(v) > 0)
+    }
+    return parseFloat(pkgPrice) > 0
+  })()
+
+  // ── Category picker screen ───────────────────────────────────
   if (!selectedCategory) {
     return (
       <div className="flex flex-col min-h-screen bg-evo-bg">
         <div className="px-6 pt-4 pb-3 shrink-0 bg-white border-b border-evo-border">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-3">
             <button onClick={() => navigate('catalog')}
               className="w-9 h-9 rounded-full flex items-center justify-center bg-evo-elevated">
               <ArrowLeft size={18} className="text-evo-text" />
             </button>
-            <div>
-              <h1 className="text-[18px] font-extrabold text-evo-text">{isEdit ? 'עריכת חבילה' : 'חבילה חדשה'}</h1>
-              {isEdit && <p className="text-xs font-semibold text-evo-muted">{editPackage.name}</p>}
-            </div>
+            <h1 className="text-[18px] font-extrabold text-evo-text">
+              {isEdit ? 'עריכת חבילה' : 'חבילה חדשה'}
+            </h1>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto no-scrollbar px-6 py-5 space-y-3">
-          <p className="text-sm font-semibold text-evo-muted mb-1">
-            {isEdit ? 'בחר קטגוריה לטעינת שדות' : 'מה הקטגוריה של החבילה?'}
-          </p>
-          {isEdit && (
-            <p className="text-xs text-evo-muted mb-4">הנתונים הקיימים (שם, מחיר, תיאור, תמונה) כבר נטענו.</p>
-          )}
+          <p className="text-sm font-semibold text-evo-muted mb-4">מה הקטגוריה של החבילה?</p>
           {ALL_CATEGORIES.map(cat => (
             <button key={cat} onClick={() => setSelectedCategory(cat)}
-              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-[16px] border-[1.5px] border-evo-border bg-white text-start hover:border-evo-purple-mid transition-all">
+              className="w-full flex items-center justify-between px-4 py-3.5 rounded-[16px] border-[1.5px] border-evo-border bg-white hover:border-evo-purple-mid transition-all">
               <span className="text-sm font-bold text-evo-text">{cat}</span>
+              <span className="text-xs text-evo-muted font-medium">
+                {CATEGORY_CONFIG[cat].packages.length} חבילות
+              </span>
             </button>
           ))}
         </div>
@@ -281,8 +355,9 @@ export default function PackageForm() {
     )
   }
 
+  // ── Main form ────────────────────────────────────────────────
   return (
-    <div className="flex flex-col min-h-screen bg-evo-bg">
+    <div className="flex flex-col h-screen bg-evo-bg">
       {/* Header */}
       <div className="px-6 pt-4 pb-3 shrink-0 bg-white border-b border-evo-border">
         <div className="flex items-center gap-3">
@@ -299,166 +374,178 @@ export default function PackageForm() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto no-scrollbar">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="px-6 py-5 space-y-5 pb-8">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto no-scrollbar min-h-0">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+          className="px-6 py-5 space-y-6 pb-10">
 
           {/* Tip */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-[12px]" style={{ background: '#EEF0FF', border: '1.5px solid #C5B8F0' }}>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-[12px]"
+            style={{ background: '#EEF0FF', border: '1.5px solid #C5B8F0' }}>
             <Zap size={13} className="text-evo-accent shrink-0" />
             <p className="text-xs font-bold text-evo-purple">ספקים עם חבילות מקבלים 3× יותר הזמנות</p>
           </div>
 
-          {/* Package image */}
-          <PhotoUpload value={pkgImage} onChange={setPkgImage} />
-
-          {/* Package type */}
-          {tpl && (
+          {/* ── Package type selector (fixed per category) ── */}
+          {cfg.pricing_model !== 'free_text' && (
             <div>
-              <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">סוג חבילה</label>
+              <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">
+                סוג חבילה
+              </label>
               <div className="space-y-2">
-                {tpl.types.map(t => (
-                  <button key={t} onClick={() => setPkgTypeName(t)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-[16px] border-[1.5px] transition-all text-start ${
-                      pkgTypeName === t ? 'bg-evo-elevated border-evo-purple-mid' : 'bg-white border-evo-border'
+                {cfg.packages.map(pkg => (
+                  <button key={pkg.id} onClick={() => setPkgTypeId(pkg.id)}
+                    className={`w-full flex flex-col gap-0.5 px-4 py-3.5 rounded-[16px] border-[1.5px] text-right transition-all ${
+                      pkgTypeId === pkg.id
+                        ? 'bg-evo-elevated border-evo-purple-mid'
+                        : 'bg-white border-evo-border'
                     }`}>
-                    <div className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center shrink-0 ${
-                      pkgTypeName === t ? 'bg-evo-purple-mid border-evo-purple-mid' : 'border-evo-dim'
-                    }`}>
-                      {pkgTypeName === t && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                    </div>
-                    <span className={`text-sm font-bold ${pkgTypeName === t ? 'text-evo-purple' : 'text-evo-text'}`}>{t}</span>
+                    <span className={`text-sm font-extrabold ${pkgTypeId === pkg.id ? 'text-evo-purple' : 'text-evo-text'}`}>
+                      {pkg.name}
+                    </span>
+                    {pkg.desc && (
+                      <span className="text-[11px] font-medium text-evo-muted">{pkg.desc}</span>
+                    )}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Pricing model */}
-          <div>
-            <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">מודל תמחור</label>
-            <div className="grid grid-cols-3 gap-2">
-              {PRICE_TYPES.map(pt => (
-                <button key={pt.value} onClick={() => setPkgPriceType(pt.value)}
-                  className={`flex flex-col items-center gap-1.5 p-3 rounded-[16px] border-[1.5px] transition-all ${
-                    pkgPriceType === pt.value ? 'bg-evo-elevated border-evo-purple-mid' : 'bg-white border-evo-border'
-                  }`}>
-                  <span className="text-xl">{pt.icon}</span>
-                  <span className={`text-[11px] font-bold text-center ${pkgPriceType === pt.value ? 'text-evo-purple' : 'text-evo-text'}`}>{pt.label}</span>
-                  <span className="text-[10px] text-evo-muted font-medium">{pt.desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* ── Photo (required) ── */}
+          <PhotoUpload value={pkgImage} onChange={setPkgImage} />
 
-          {/* Price */}
-          <div>
-            <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
-              מחיר {pkgPriceType === 'per_hour' ? '(לשעה)' : pkgPriceType === 'per_guest' ? '(לאדם)' : ''}
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-evo-muted font-bold">₪</span>
-              <input type="number" value={pkgPrice} onChange={e => setPkgPrice(e.target.value)} placeholder="0"
-                className="w-full bg-white border-[1.5px] border-evo-border rounded-xl pl-8 pr-4 py-3.5 text-evo-text text-[15px] focus:outline-none focus:border-evo-purple-mid transition-colors" />
-            </div>
-          </div>
+          {/* ══════════════ PRICING SECTION ══════════════ */}
 
-          {/* Guests & timing */}
-          <div className="grid grid-cols-2 gap-3">
-            <Stepper label="מינ. אורחים"    value={pkgMinGuests} onChange={setPkgMinGuests} min={0} />
-            <Stepper label="מקס. אורחים"   value={pkgMaxGuests} onChange={setPkgMaxGuests} min={0} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Stepper label="מינ. שעות"       value={pkgMinHours}  onChange={setPkgMinHours}  min={1} max={24} />
-            <Stepper label="זמן הכנה (שע')" value={setupTime}    onChange={setSetupTime}    min={0} max={12} />
-          </div>
-
-          {/* Staff toggle */}
-          <div className="flex items-center justify-between bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3">
+          {/* flat_per_package — one price */}
+          {cfg.pricing_model === 'flat_per_package' && (
             <div>
-              <p className="text-sm font-bold text-evo-text">צוות כלול במחיר</p>
-              <p className="text-xs text-evo-muted font-medium">טכנאי, ברמן, צלם וכו'</p>
+              <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
+                {cfg.price_label}
+              </label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-evo-muted font-bold">₪</span>
+                <input type="number" value={pkgPrice} onChange={e => setPkgPrice(e.target.value)}
+                  placeholder="0"
+                  className="w-full bg-white border-[1.5px] border-evo-border rounded-xl pl-8 pr-4 py-3.5 text-evo-text text-[15px] focus:outline-none focus:border-evo-purple-mid transition-colors" />
+              </div>
             </div>
-            <button onClick={() => setStaffIncluded(p => !p)}
-              className={`w-11 h-6 rounded-full transition-all ${staffIncluded ? 'bg-evo-purple-mid' : 'bg-evo-border'}`}>
-              <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5 ${staffIncluded ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
-          </div>
+          )}
 
-          {/* Description — mandatory */}
-          <div>
-            <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">תיאור החבילה</label>
-            <p className="text-xs text-evo-muted font-medium mb-2">
-              תאר מה כלול בחבילה ואילו מוצרים או ציוד מסופקים. היה ספציפי — לקוחות רוצים לדעת בדיוק מה הם מזמינים.
-            </p>
-            <textarea value={pkgDesc} onChange={e => setPkgDesc(e.target.value)} rows={4}
-              placeholder="לדוגמה: כולל 2 רמקולי JBL SRX815, 1 סאב, מיקסר Pioneer DJM-900, 2 מיקרופונים אלחוטיים, וטכנאי לאורך האירוע. הקמה לוקחת כ-2 שעות ומתאים לאולמות עד 300 אורחים."
-              className={`w-full bg-white border-[1.5px] rounded-xl px-4 py-3.5 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none transition-colors resize-none ${
-                pkgDesc.length > 10 ? 'border-evo-green' : 'border-evo-border focus:border-evo-purple-mid'
-              }`} />
-            <p className={`text-xs font-bold mt-1 text-right ${pkgDesc.length > 10 ? 'text-evo-green' : 'text-evo-muted'}`}>{pkgDesc.length} chars</p>
-          </div>
+          {/* per_head_tiers — 7 price tiers */}
+          {cfg.pricing_model === 'per_head_tiers' && (
+            <div>
+              <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">
+                {cfg.price_label}
+              </label>
+              <div className="space-y-2">
+                {GUEST_TIERS.map(tier => (
+                  <div key={tier.key} className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-evo-muted w-32 shrink-0 text-right">{tier.label}</span>
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-evo-muted text-sm font-bold">₪</span>
+                      <input
+                        type="number"
+                        value={tierPrices[tier.key]}
+                        onChange={e => setTierPrices(prev => ({ ...prev, [tier.key]: e.target.value }))}
+                        placeholder="מחיר לראש"
+                        className="w-full bg-white border-[1.5px] border-evo-border rounded-xl pl-7 pr-3 py-2.5 text-evo-text text-sm focus:outline-none focus:border-evo-purple-mid transition-colors"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
-          {/* Template fields */}
-          {tpl && pkgTypeName && (
+          {/* size_tiers — small / medium / large prices */}
+          {cfg.pricing_model === 'size_tiers' && (
+            <div>
+              <label className="text-xs font-bold text-evo-muted block mb-3 uppercase tracking-wider">
+                {cfg.price_label}
+              </label>
+              <div className="space-y-3">
+                {SIZE_TIERS.map(tier => (
+                  <div key={tier.key}>
+                    <label className="text-xs font-semibold text-evo-muted block mb-1">{tier.label}</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-evo-muted font-bold">₪</span>
+                      <input
+                        type="number"
+                        value={sizePrices[tier.key]}
+                        onChange={e => setSizePrices(prev => ({ ...prev, [tier.key]: e.target.value }))}
+                        placeholder="0"
+                        className="w-full bg-white border-[1.5px] border-evo-border rounded-xl pl-8 pr-4 py-3 text-evo-text text-[14px] focus:outline-none focus:border-evo-purple-mid transition-colors"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* free_text — Equipment: custom name + description + price */}
+          {cfg.pricing_model === 'free_text' && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">שם החבילה</label>
+                <input type="text" value={customName} onChange={e => setCustomName(e.target.value)}
+                  placeholder="לדוגמה: חבילת קיץ — שמשיות + מאווררים"
+                  className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
+                  מה כלול בחבילה — פירוט פריטים וכמויות
+                </label>
+                <textarea value={customDesc} onChange={e => setCustomDesc(e.target.value)} rows={4}
+                  placeholder="לדוגמה: 10 כסאות נוח + 3 שמשיות גדולות + 2 מאווררים תעשייתיים + שולחן שירות. כולל הובלה והרכבה."
+                  className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors resize-none" />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">מחיר לחבילה (₪)</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-evo-muted font-bold">₪</span>
+                  <input type="number" value={pkgPrice} onChange={e => setPkgPrice(e.target.value)}
+                    placeholder="0"
+                    className="w-full bg-white border-[1.5px] border-evo-border rounded-xl pl-8 pr-4 py-3.5 text-evo-text text-[15px] focus:outline-none focus:border-evo-purple-mid transition-colors" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Category-specific fields ── */}
+          {cfg.fields && cfg.fields.length > 0 && pkgTypeId && (
             <div className="space-y-3">
-              <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">מה כלול — {pkgTypeName.split('(')[0].trim()}</p>
-              {tpl.fields.map(field => (
-                <TemplateField key={field.key} field={field} value={templateValues[field.key]} onChange={val => setTplField(field.key, val)} />
+              <p className="text-xs font-bold text-evo-muted uppercase tracking-wider">
+                מה כלול — {selectedPkg?.name || ''}
+              </p>
+              {cfg.fields.map(field => (
+                <TemplateField
+                  key={field.key}
+                  field={field}
+                  value={templateValues[field.key]}
+                  onChange={val => setTplField(field.key, val)}
+                />
               ))}
             </div>
           )}
 
-          {/* Add-ons */}
-          <div>
-            <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
-              תוספות <span className="normal-case font-medium">(אופציונלי)</span>
-            </label>
-            <div className="flex gap-2 mb-2">
-              <input type="text" value={addOnInput} onChange={e => setAddOnInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addAddOn()}
-                placeholder="לדוגמה: מיקרופון נוסף, LED truss…"
-                className="flex-1 bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors" />
-              <button onClick={addAddOn}
-                className="w-11 h-11 rounded-xl bg-evo-elevated flex items-center justify-center shrink-0">
-                <Plus size={16} className="text-evo-purple" />
-              </button>
+          {/* ── Description (non-free_text categories) ── */}
+          {cfg.pricing_model !== 'free_text' && (
+            <div>
+              <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
+                תיאור נוסף <span className="normal-case font-medium text-[10px]">· אופציונלי</span>
+              </label>
+              <textarea value={pkgDesc} onChange={e => setPkgDesc(e.target.value)} rows={3}
+                placeholder="הוסף פרטים שיעזרו ללקוח להבין את הערך של החבילה…"
+                className="w-full bg-white border-[1.5px] border-evo-border rounded-xl px-4 py-3 text-evo-text text-[14px] placeholder-evo-dim focus:outline-none focus:border-evo-purple-mid transition-colors resize-none" />
             </div>
-            {pkgAddOns.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {pkgAddOns.map(ao => (
-                  <span key={ao} className="flex items-center gap-1.5 text-xs font-bold text-evo-purple bg-evo-elevated border-[1.5px] border-evo-dim px-3 py-1.5 rounded-full">
-                    {ao}
-                    <button onClick={() => setPkgAddOns(prev => prev.filter(a => a !== ao))}>
-                      <X size={10} className="text-evo-muted" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Badge */}
-          <div>
-            <label className="text-xs font-bold text-evo-muted block mb-2 uppercase tracking-wider">
-              תגית חבילה <span className="normal-case font-medium text-[10px]">· אופציונלי</span>
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {PKG_BADGES.map(b => (
-                <button key={b.value} onClick={() => setPkgBadge(pkgBadge === b.value ? null : b.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold border-[1.5px] transition-all ${
-                    pkgBadge === b.value ? 'bg-evo-elevated border-evo-purple-mid text-evo-purple' : 'border-evo-border text-evo-muted'
-                  }`}>
-                  {b.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
         </motion.div>
       </div>
 
-      {/* CTA */}
+      {/* ── Save CTA ── */}
       <div className="px-6 pb-6 pt-2 bg-evo-bg shrink-0">
         {saveError && (
           <p className="text-sm font-semibold text-red-500 text-center bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 mb-3">
@@ -466,33 +553,59 @@ export default function PackageForm() {
           </p>
         )}
         <button
+          disabled={!canSave || saving}
           onClick={async () => {
             setSaveError('')
             setSaving(true)
             try {
-              await savePackage({
+              const base = {
                 id:           isEdit ? editPackage.id : undefined,
-                name:         pkgTypeName,
-                description:  pkgDesc,
-                price:        parseFloat(pkgPrice),
-                price_type:   pkgPriceType,
-                min_guests:   pkgMinGuests,
-                max_guests:   pkgMaxGuests,
-                min_hours:    pkgMinHours,
-                is_popular:   pkgBadge === 'most_popular',
-                badge:        pkgBadge || null,
+                category:     selectedCategory,
+                package_type_id: cfg.pricing_model !== 'free_text' ? pkgTypeId : null,
+                name:         cfg.pricing_model === 'free_text'
+                                ? customName
+                                : (selectedPkg?.name || pkgTypeId),
+                description:  cfg.pricing_model === 'free_text' ? customDesc : pkgDesc,
+                pricing_model: cfg.pricing_model,
                 image_url:    pkgImage || null,
-                is_available: true,
+                template_data: templateValues,
+                is_available: !!pkgImage,
                 sort_order:   isEdit ? (editPackage.sort_order || 0) : 0,
-              })
+              }
+
+              // Pricing payload per model
+              if (cfg.pricing_model === 'flat_per_package') {
+                Object.assign(base, { price: parseFloat(pkgPrice), price_type: 'fixed' })
+              } else if (cfg.pricing_model === 'per_head_tiers') {
+                Object.assign(base, {
+                  price_type: 'per_head',
+                  guest_tier_prices: Object.fromEntries(
+                    Object.entries(tierPrices).map(([k, v]) => [k, parseFloat(v) || null])
+                  ),
+                  // Derive base price from smallest tier for backwards compat
+                  price: parseFloat(tierPrices['0_50']) || 0,
+                })
+              } else if (cfg.pricing_model === 'size_tiers') {
+                Object.assign(base, {
+                  price_type: 'per_event_size',
+                  size_prices: Object.fromEntries(
+                    Object.entries(sizePrices).map(([k, v]) => [k, parseFloat(v) || null])
+                  ),
+                  price: parseFloat(sizePrices['small']) || 0,
+                })
+              } else if (cfg.pricing_model === 'free_text') {
+                Object.assign(base, { price: parseFloat(pkgPrice), price_type: 'fixed' })
+              }
+
+              await savePackage(base)
               navigate('catalog')
             } catch (err) {
+              console.error(err)
               setSaveError('שגיאה בשמירה — נסה שנית')
             } finally {
               setSaving(false)
             }
           }}
-          disabled={!canSave || saving}
           className="w-full py-4 text-white text-base font-extrabold transition-all disabled:opacity-30 disabled:cursor-not-allowed active:scale-[0.98]"
           style={{ borderRadius: 14, background: '#2D1B8A', boxShadow: canSave ? '0 4px 20px rgba(45,27,105,0.35)' : 'none' }}>
           {saving ? 'שומר...' : isEdit ? 'שמור שינויים' : 'שמור חבילה'}
